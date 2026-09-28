@@ -22,7 +22,7 @@ export function LiveData({ mode }: { mode: Mode }) {
 
   useEffect(() => {
     setFavorites(readFavorites());
-    loadUpcomingFrance(30)
+    loadUpcomingFrance()
       .then(setEvents)
       .catch(() =>
         setError("Impossible de joindre la source d'événements depuis cette preview. Réessaie un peu plus tard.")
