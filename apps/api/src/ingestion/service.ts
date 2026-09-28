@@ -5,6 +5,7 @@ import type {
   SourceFetchResult,
   SourceFetchScope
 } from "../sources/types.js";
+import { queueEventNotifications } from "../notifications/queue.js";
 import {
   diffSnapshots,
   eventSnapshot,
@@ -104,11 +105,19 @@ async function upsertVenue(
   return result.rows[0]?.id ?? null;
 }
 
+type IngestedEvent = {
+  kind: "new" | "updated" | "unchanged";
+  eventId: string;
+  venueId: string | null;
+  eventType: string | null;
+  versionKey: string;
+};
+
 async function ingestOne(
   client: PoolClient,
   event: SourceEvent,
   now: Date
-): Promise<"new" | "updated" | "unchanged"> {
+): Promise<IngestedEvent> {
   const snapshot = eventSnapshot(event);
   const hash = snapshotHash(snapshot);
   const venueId = await upsertVenue(client, event, now);
@@ -126,7 +135,7 @@ async function ingestOne(
   const previous = existing.rows[0];
 
   if (!previous) {
-    await client.query(
+    const inserted = await client.query<{ id: string }>(
       `
         INSERT INTO events (
           source,
@@ -147,6 +156,7 @@ async function ingestOne(
           normalized_payload
         )
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'active',$11,$12,$12,$13,$14)
+        RETURNING id
       `,
       [
         event.source,
@@ -166,7 +176,16 @@ async function ingestOne(
       ]
     );
 
-    return "new";
+    const eventId = inserted.rows[0]?.id;
+    if (!eventId) throw new Error("Could not insert event");
+
+    return {
+      kind: "new",
+      eventId,
+      venueId,
+      eventType: event.eventType ?? null,
+      versionKey: hash
+    };
   }
 
   const reappeared = previous.status === "missing";
@@ -186,7 +205,13 @@ async function ingestOne(
       `,
       [previous.id, venueId, now, event.raw]
     );
-    return "unchanged";
+    return {
+      kind: "unchanged",
+      eventId: previous.id,
+      venueId,
+      eventType: event.eventType ?? null,
+      versionKey: hash
+    };
   }
 
   const changes = changed
@@ -249,7 +274,13 @@ async function ingestOne(
     ]
   );
 
-  return "updated";
+  return {
+    kind: "updated",
+    eventId: previous.id,
+    venueId,
+    eventType: event.eventType ?? null,
+    versionKey: hash
+  };
 }
 
 async function markMissing(
@@ -312,10 +343,31 @@ async function persistFetchResult(
   let unchangedEvents = 0;
 
   for (const event of result.events) {
-    const kind = await ingestOne(client, event, now);
-    if (kind === "new") newEvents += 1;
-    if (kind === "updated") updatedEvents += 1;
-    if (kind === "unchanged") unchangedEvents += 1;
+    const ingested = await ingestOne(client, event, now);
+
+    if (ingested.kind === "new") {
+      newEvents += 1;
+      await queueEventNotifications(client, {
+        eventId: ingested.eventId,
+        venueId: ingested.venueId,
+        eventType: ingested.eventType,
+        kind: "new_event",
+        versionKey: ingested.versionKey
+      });
+    }
+
+    if (ingested.kind === "updated") {
+      updatedEvents += 1;
+      await queueEventNotifications(client, {
+        eventId: ingested.eventId,
+        venueId: ingested.venueId,
+        eventType: ingested.eventType,
+        kind: "event_updated",
+        versionKey: ingested.versionKey
+      });
+    }
+
+    if (ingested.kind === "unchanged") unchangedEvents += 1;
   }
 
   const warnings = [...result.warnings];
