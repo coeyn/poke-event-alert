@@ -73,3 +73,15 @@ Le pipeline :
 - désactive la détection MISSING lorsque la collecte est incomplète.
 
 Le schéma externe reste isolé dans `src/sources/pokedata`.
+
+
+## Tests d'intégration
+
+La CI démarre un PostgreSQL isolé, applique toutes les migrations puis vérifie le cycle d'ingestion complet :
+
+```bash
+npm run --workspace @poke-event-alert/api db:migrate
+npm run --workspace @poke-event-alert/api test:integration
+```
+
+Le scénario couvre la création initiale, une collecte identique sans doublon, une modification d'événement et la disparition d'un événement futur dans le même périmètre de collecte.
