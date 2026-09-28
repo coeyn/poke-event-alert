@@ -51,12 +51,16 @@ export type Preferences = {
   reminderHoursBefore: number;
 };
 
-const API_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
   "http://localhost:3001";
 
+export const PUBLIC_API_CONFIGURED = Boolean(
+  process.env.NEXT_PUBLIC_API_URL
+);
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "content-type": "application/json",

@@ -91,6 +91,25 @@ test("ingestion is idempotent and detects updated/missing events", async () => {
   assert.equal(first.unchangedEvents, 0);
   assert.equal(first.missingEvents, 0);
 
+  const venue = await pool.query<{ id: string }>(
+    "SELECT id FROM venues WHERE source = 'integration' LIMIT 1"
+  );
+  const venueId = venue.rows[0]!.id;
+
+  const user = await pool.query<{ id: string }>(
+    "INSERT INTO users (display_name) VALUES ('Push Tester') RETURNING id"
+  );
+  const userId = user.rows[0]!.id;
+
+  await pool.query(
+    "INSERT INTO venue_follows (user_id, venue_id) VALUES ($1::uuid,$2::uuid)",
+    [userId, venueId]
+  );
+  await pool.query(
+    "INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ($1::uuid,$2,$3,$4)",
+    [userId, "https://push.example.test/integration", "p256dh", "auth"]
+  );
+
   const second = await runSourceIngestion(
     pool,
     new FakeSource(result([
@@ -104,6 +123,11 @@ test("ingestion is idempotent and detects updated/missing events", async () => {
   assert.equal(second.updatedEvents, 0);
   assert.equal(second.unchangedEvents, 2);
   assert.equal(second.missingEvents, 0);
+
+  const afterUnchanged = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM notifications"
+  );
+  assert.equal(afterUnchanged.rows[0]?.count, 0);
 
   const third = await runSourceIngestion(
     pool,
@@ -174,6 +198,39 @@ test("ingestion is idempotent and detects updated/missing events", async () => {
     before: "Event one",
     after: "Event one — nouvelle heure"
   });
+
+  const updateNotifications = await pool.query<{
+    kind: string;
+    deduplication_key: string;
+  }>(
+    "SELECT kind, deduplication_key FROM notifications ORDER BY created_at"
+  );
+  assert.equal(updateNotifications.rowCount, 1);
+  assert.equal(updateNotifications.rows[0]?.kind, "event_updated");
+
+  const fourth = await runSourceIngestion(
+    pool,
+    new FakeSource(result([
+      event("one", {
+        startsAt: "2026-10-10T13:00:00.000Z",
+        title: "Event one — nouvelle heure"
+      }),
+      event("three", { startsAt: "2026-10-20T18:00:00.000Z" })
+    ])),
+    new Date("2026-09-28T15:00:00.000Z")
+  );
+
+  assert.equal(fourth.newEvents, 1);
+  assert.equal(fourth.updatedEvents, 0);
+  assert.equal(fourth.unchangedEvents, 1);
+
+  const allNotifications = await pool.query<{ kind: string }>(
+    "SELECT kind FROM notifications ORDER BY created_at"
+  );
+  assert.deepEqual(
+    allNotifications.rows.map((row) => row.kind).sort(),
+    ["event_updated", "new_event"].sort()
+  );
 });
 
 test.after(async () => {

@@ -4,6 +4,7 @@ import { createPool } from "../db/pool.js";
 import { createApp } from "./app.js";
 
 process.env.NODE_ENV = "test";
+process.env.WEB_PUSH_PUBLIC_KEY = "test-public-key";
 
 const pool = createPool();
 const app = createApp(pool);
@@ -139,6 +140,27 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
   const userId = user.json().id as string;
   assert.ok(userId);
 
+  const pushKey = await app.inject({
+    method: "GET",
+    url: "/push/public-key"
+  });
+  assert.equal(pushKey.statusCode, 200);
+  assert.deepEqual(pushKey.json(), { publicKey: "test-public-key" });
+
+  const subscribe = await app.inject({
+    method: "POST",
+    url: `/users/${userId}/push-subscriptions`,
+    payload: {
+      endpoint: "https://push.example.test/subscription",
+      keys: {
+        p256dh: "test-p256dh",
+        auth: "test-auth"
+      }
+    }
+  });
+  assert.equal(subscribe.statusCode, 201);
+  assert.equal(subscribe.json().subscribed, true);
+
   const follow = await app.inject({
     method: "POST",
     url: `/users/${userId}/follows/${venueId}`
@@ -201,6 +223,14 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
     url: `/users/${userId}/follows`
   });
   assert.equal(followsAfter.json().items.length, 0);
+
+  const unsubscribe = await app.inject({
+    method: "DELETE",
+    url: `/users/${userId}/push-subscriptions`,
+    payload: { endpoint: "https://push.example.test/subscription" }
+  });
+  assert.equal(unsubscribe.statusCode, 200);
+  assert.equal(unsubscribe.json().subscribed, false);
 });
 
 test.after(async () => {
