@@ -23,109 +23,26 @@ export type PreviewVenue = {
   events: PreviewEvent[];
 };
 
-type PokeDataPayload = {
-  metadata?: {
-    current_page?: number;
-    total_pages?: number;
-  };
-  events?: Record<string, unknown>[];
+type PreviewData = {
+  generatedAt: string;
+  scope: { country: string; start: string; end: string; days: number };
+  count: number;
+  events: PreviewEvent[];
 };
 
-const API = "https://pokedata.ovh/events/apiv2";
-const MAX_PAGES = 15;
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-function dateOnly(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
+export async function loadUpcomingFrance(): Promise<PreviewEvent[]> {
+  const response = await fetch(`${BASE_PATH}/data/events.json`, {
+    cache: "no-store"
+  });
 
-function addDays(date: Date, days: number) {
-  const copy = new Date(date);
-  copy.setUTCDate(copy.getUTCDate() + days);
-  return copy;
-}
-
-function text(row: Record<string, unknown>, ...keys: string[]) {
-  for (const key of keys) {
-    const value = row[key];
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (typeof value === "number") return String(value);
+  if (!response.ok) {
+    throw new Error(`Preview data HTTP ${response.status}`);
   }
-  return "";
-}
 
-function normalizeType(value: string) {
-  const type = value.toLowerCase();
-  if (type.includes("challenge")) return "Challenge";
-  if (type.includes("cup")) return "Cup";
-  if (type.includes("pre") && type.includes("release")) return "Avant-première";
-  if (type.includes("nonpremier")) return "Tournoi";
-  return value || "Événement";
-}
-
-function normalizeGame(row: Record<string, unknown>) {
-  const raw = text(row, "Products", "product", "game", "type").toLowerCase();
-  if (raw.includes("tcg")) return "JCC";
-  if (raw.includes("vg")) return "VGC";
-  if (raw.includes("go")) return "GO";
-  return "Play!";
-}
-
-function normalize(row: Record<string, unknown>): PreviewEvent | null {
-  const id = text(row, "guid", "Guid", "id");
-  const venueName = text(row, "shop", "shop_name", "venue_name");
-  const leagueId = text(row, "league", "league_id") || null;
-  const when = text(row, "Start_date", "when", "start_datetime", "event_date", "date");
-  const date = new Date(when.includes("T") ? when : when.replace(" ", "T"));
-  if (!id || !venueName || Number.isNaN(date.getTime())) return null;
-
-  const venueKey = leagueId ? `league:${leagueId}` : `name:${venueName.toLowerCase()}`;
-
-  return {
-    id,
-    title: text(row, "name", "Name", "title") || "Événement Play! Pokémon",
-    type: normalizeType(text(row, "type", "Subtype", "category")),
-    game: normalizeGame(row),
-    startsAt: date.toISOString(),
-    sourceUrl: text(row, "pokemon_url", "Event_website", "url") || "https://play.pokemon.com/",
-    venueKey,
-    venueName,
-    leagueId,
-    city: text(row, "city"),
-    address: text(row, "street_address", "address"),
-    countryCode: text(row, "country_code") || "FR"
-  };
-}
-
-export async function loadUpcomingFrance(days = 30): Promise<PreviewEvent[]> {
-  const today = new Date();
-  const start = dateOnly(today);
-  const end = dateOnly(addDays(today, days));
-  const base = `${API}/_country/FR/_start/${start}/_end/${end}`;
-
-  const events: PreviewEvent[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  do {
-    const url = page === 1 ? base : `${base}/_page/${page}`;
-    const response = await fetch(url, {
-      headers: { accept: "application/json" },
-      cache: "no-store"
-    });
-    if (!response.ok) throw new Error(`PokéData HTTP ${response.status}`);
-
-    const payload = (await response.json()) as PokeDataPayload;
-    totalPages = Math.min(payload.metadata?.total_pages ?? 1, MAX_PAGES);
-
-    for (const row of payload.events ?? []) {
-      const item = normalize(row);
-      if (item) events.push(item);
-    }
-    page += 1;
-  } while (page <= totalPages);
-
-  return Array.from(new Map(events.map((event) => [event.id, event])).values())
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const payload = (await response.json()) as PreviewData;
+  return payload.events;
 }
 
 export function venuesFromEvents(events: PreviewEvent[]): PreviewVenue[] {
