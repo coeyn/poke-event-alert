@@ -87,9 +87,17 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
 
   const eventId = event.rows[0]!.id;
 
-  const health = await app.inject({ method: "GET", url: "/health" });
+  const health = await app.inject({
+    method: "GET",
+    url: "/health",
+    headers: { origin: "https://coeyn.github.io" }
+  });
   assert.equal(health.statusCode, 200);
   assert.deepEqual(health.json(), { ok: true });
+  assert.equal(
+    health.headers["access-control-allow-origin"],
+    "https://coeyn.github.io"
+  );
 
   const venueSearch = await app.inject({
     method: "GET",

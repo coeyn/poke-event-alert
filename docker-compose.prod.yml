@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-poke_event_alert}
+      POSTGRES_USER: ${POSTGRES_USER:-poke_event_alert}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-poke_event_alert} -d ${POSTGRES_DB:-poke_event_alert}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    healthcheck:
+      disable: true
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: "no"
+    environment: &api-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-poke_event_alert}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-poke_event_alert}
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-https://coeyn.github.io/poke-event-alert}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://coeyn.github.io}
+      POKEDATA_EVENTS_API_URL: ${POKEDATA_EVENTS_API_URL:-https://pokedata.ovh/events/apiv2}
+      POKEDATA_COUNTRIES: ${POKEDATA_COUNTRIES:-FR}
+      POKEDATA_DAYS_AHEAD: ${POKEDATA_DAYS_AHEAD:-180}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["node", "apps/api/dist/cli/migrate.js"]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      PORT: 3001
+      HOST: 0.0.0.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${API_PORT:-3001}:3001"
+
+  worker:
+    healthcheck:
+      disable: true
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-3600}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          echo "[worker] ingesting PokéData events"
+          node apps/api/dist/cli/ingest-pokedata.js || echo "[worker] ingestion failed"
+
+          echo "[worker] sending pending notifications"
+          node apps/api/dist/cli/send-notifications.js || echo "[worker] notification send failed"
+
+          sleep "$$SYNC_INTERVAL_SECONDS"
+        done
+
+volumes:
+  postgres-data:
