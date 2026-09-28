@@ -52,6 +52,44 @@ test("normalizes nested venue data", () => {
   assert.equal(event.longitude, -1.6778);
 });
 
+
+test("normalizes fields observed in the live PokéData v2 payload", () => {
+  const event = normalizePokeDataEvent({
+    type: "League Challenge",
+    name: "Challenge de septembre",
+    date: "2026-09-28",
+    shop: "BOUTIQUE TEST",
+    street_address: "1 RUE DU TEST, 22000 SAINT-BRIEUC, FRANCE",
+    city: "Saint-Brieuc",
+    country_code: "FR",
+    pokemon_url:
+      "https://www.pokemon.com/us/pokemon-trainer-club/play-pokemon-tournaments/26-09-000001/",
+    guid: "live-v2-guid",
+    latitude: "48.514",
+    longitude: "-2.765",
+    league: "26029062",
+    Products: "tcg",
+    Start_date: "2026-09-28T18:30:00Z",
+    Third_party_registration_website: "https://example.test/register"
+  });
+
+  assert.ok(event);
+  assert.equal(event.sourceEventId, "live-v2-guid");
+  assert.equal(event.title, "Challenge de septembre");
+  assert.equal(event.startsAt, "2026-09-28T18:30:00.000Z");
+  assert.equal(event.venueName, "BOUTIQUE TEST");
+  assert.equal(event.leagueId, "26029062");
+  assert.equal(event.sourceVenueId, "league:26029062");
+  assert.equal(event.countryCode, "FR");
+  assert.equal(event.eventType, "challenge");
+  assert.equal(event.game, "tcg");
+  assert.equal(
+    event.sourceUrl,
+    "https://www.pokemon.com/us/pokemon-trainer-club/play-pokemon-tournaments/26-09-000001/"
+  );
+  assert.equal(event.registrationUrl, "https://example.test/register");
+});
+
 test("rejects rows without a stable id or date", () => {
   assert.equal(
     normalizePokeDataEvent({ title: "Incomplete event" }),
