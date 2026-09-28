@@ -6,10 +6,16 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/**/*.test.ts",
-    "source:pokedata": "tsx src/cli/fetch-pokedata.ts"
+    "source:pokedata": "tsx src/cli/fetch-pokedata.ts",
+    "db:migrate": "tsx src/cli/migrate.ts",
+    "ingest:pokedata": "tsx src/cli/ingest-pokedata.ts"
+  },
+  "dependencies": {
+    "pg": "^8.16.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
   }
