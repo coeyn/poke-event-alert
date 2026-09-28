@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import type { Pool } from "pg";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerUserRoutes } from "./routes/users.js";
+import { registerPushRoutes } from "./routes/push.js";
 import { registerVenueRoutes } from "./routes/venues.js";
 
 export function createApp(pool: Pool) {
@@ -36,6 +37,7 @@ export function createApp(pool: Pool) {
   registerEventRoutes(app, pool);
   registerVenueRoutes(app, pool);
   registerUserRoutes(app, pool);
+  registerPushRoutes(app, pool);
 
   return app;
 }
