@@ -47,6 +47,10 @@ export async function queueEventNotifications(
           OR p.event_types IS NULL
           OR jsonb_array_length(p.event_types) = 0
           OR p.event_types ? $3::text
+          OR (
+            p.event_types ? 'other'
+            AND $3::text NOT IN ('challenge', 'cup', 'prerelease')
+          )
         )
       ON CONFLICT (deduplication_key) DO NOTHING
     `,
