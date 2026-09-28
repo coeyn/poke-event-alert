@@ -13,7 +13,8 @@
     "dev": "tsx watch src/cli/serve.ts",
     "start": "tsx src/cli/serve.ts",
     "notifications:send": "tsx src/cli/send-notifications.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "start:synology": "node dist/cli/serve-with-worker.js"
   },
   "dependencies": {
     "pg": "^8.16.0",
