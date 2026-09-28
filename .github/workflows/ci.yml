@@ -70,13 +70,11 @@ jobs:
       - name: Typecheck web
         run: npm run --workspace @poke-event-alert/web typecheck
 
+      - name: Generate preview event data
+        run: npm run --workspace @poke-event-alert/web preview:data
+
       - name: Build static preview
         env:
           GITHUB_PAGES: "true"
+          NEXT_PUBLIC_BASE_PATH: "/poke-event-alert"
         run: npm run --workspace @poke-event-alert/web build
-
-      - name: Check PokéData browser CORS
-        run: |
-          headers="$(curl -fsSI 'https://pokedata.ovh/events/apiv2/_country/FR/_start/2026-09-28/_end/2026-09-29')"
-          echo "$headers"
-          echo "$headers" | grep -qi '^access-control-allow-origin:'
