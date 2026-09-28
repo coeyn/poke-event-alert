@@ -85,3 +85,31 @@ npm run --workspace @poke-event-alert/api test:integration
 ```
 
 Le scénario couvre la création initiale, une collecte identique sans doublon, une modification d'événement et la disparition d'un événement futur dans le même périmètre de collecte.
+
+
+## Notifications Web Push
+
+Variables nécessaires :
+
+```env
+WEB_PUSH_PUBLIC_KEY=
+WEB_PUSH_PRIVATE_KEY=
+WEB_PUSH_SUBJECT=mailto:admin@example.com
+PUBLIC_WEB_URL=https://coeyn.github.io/poke-event-alert
+```
+
+Générer une paire VAPID :
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Le flux est le suivant :
+
+1. le navigateur crée un abonnement Push ;
+2. l'abonnement est enregistré via `POST /users/:userId/push-subscriptions` ;
+3. l'ingestion crée une notification lorsqu'un événement NEW ou UPDATED correspond à une boutique suivie et aux filtres utilisateur ;
+4. `npm run --workspace @poke-event-alert/api notifications:send` envoie les notifications en attente ;
+5. les abonnements expirés (HTTP 404/410) sont supprimés automatiquement.
+
+En production, le job d'ingestion et le worker d'envoi doivent être exécutés de manière récurrente sur un backend toujours disponible.
