@@ -8,7 +8,8 @@
     "test": "tsx --test src/**/*.test.ts",
     "source:pokedata": "tsx src/cli/fetch-pokedata.ts",
     "db:migrate": "tsx src/cli/migrate.ts",
-    "ingest:pokedata": "tsx src/cli/ingest-pokedata.ts"
+    "ingest:pokedata": "tsx src/cli/ingest-pokedata.ts",
+    "test:integration": "tsx --test src/**/*.integration.ts"
   },
   "dependencies": {
     "pg": "^8.16.0"
