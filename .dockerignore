@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+**/node_modules
+apps/web
+apps/api/dist
+coverage
+.env
+.env.*
+!.env.example
