@@ -24,6 +24,11 @@ export type SourceFetchResult = {
   events: SourceEvent[];
   warnings: string[];
   pagesFetched: number;
+  /**
+   * True only when the adapter believes it consumed the full source result.
+   * Missing-event detection MUST NOT run for an incomplete fetch.
+   */
+  complete: boolean;
 };
 
 export interface EventSource {
