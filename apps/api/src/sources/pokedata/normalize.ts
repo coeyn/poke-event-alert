@@ -100,7 +100,14 @@ function normalizeEventType(record: JsonRecord): string | undefined {
 }
 
 function normalizeGame(record: JsonRecord): string | undefined {
-  const raw = stringValue(record, ["game", "game_type", "gameType", "discipline"]);
+  const raw = stringValue(record, [
+    "game",
+    "game_type",
+    "gameType",
+    "discipline",
+    "Products",
+    "product"
+  ]);
   if (!raw) return undefined;
   const value = raw.toLowerCase();
   if (value.includes("tcg") || value.includes("jcc")) return "tcg";
@@ -115,6 +122,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
 
   const sourceEventId = stringValue(record, [
     "guid",
+    "Guid",
     "event_guid",
     "eventGuid",
     "event_id",
@@ -123,7 +131,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
   ]);
 
   const title =
-    stringValue(record, ["name", "event_name", "eventName", "title"]) ??
+    stringValue(record, ["name", "Name", "event_name", "eventName", "title"]) ??
     "Événement Play! Pokémon";
 
   const startsAt =
@@ -131,6 +139,8 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
       firstValue(record, [
         "start_datetime",
         "startDateTime",
+        "Start_date",
+        "when",
         "starts_at",
         "startsAt",
         "datetime",
@@ -159,6 +169,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
       "event_url",
       "eventUrl",
       "details_url",
+      "pokemon_url",
       "url"
     ]) ?? POKEDATA_EVENT_PAGE;
 
@@ -167,6 +178,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
     "registrationUrl",
     "register_url",
     "registerUrl",
+    "Third_party_registration_website",
     "registration"
   ]);
 
@@ -188,6 +200,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
     "venueName",
     "store_name",
     "storeName",
+    "shop",
     "name"
   ]);
   if (venueName && venueName !== title) event.venueName = venueName;
@@ -211,7 +224,10 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
     "league",
     "league_identifier"
   ]);
-  if (leagueId) event.leagueId = leagueId;
+  if (leagueId) {
+    event.leagueId = leagueId;
+    if (!event.sourceVenueId) event.sourceVenueId = `league:${leagueId}`;
+  }
 
   const address = lookupString(record, [
     "address",
