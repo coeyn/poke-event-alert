@@ -5,50 +5,71 @@ Backend de Poké Event Alert.
 ## Modules MVP
 
 - `sources/` — adaptateurs de sources
-- `ingestion/` — récupération et normalisation
-- `events/` — persistance et comparaison
+- `ingestion/` — récupération, normalisation et détection des changements
+- `events/` — persistance
 - `venues/` — boutiques / Ligues
 - `subscriptions/` — favoris et préférences
 - `notifications/` — Web Push
 - `calendar/` — génération iCalendar
 
-## Stack proposée
+## Stack
 
 - Node.js
 - TypeScript
-- Fastify
 - PostgreSQL
+- `pg`
 
-## Première source : PokéData Events API v2
+## Développement local
+
+Démarrer PostgreSQL :
+
+```bash
+docker compose up -d postgres
+```
+
+Installer les dépendances et créer le schéma :
+
+```bash
+npm install
+npm run --workspace @poke-event-alert/api db:migrate
+```
+
+Lancer les contrôles :
+
+```bash
+npm run --workspace @poke-event-alert/api typecheck
+npm run --workspace @poke-event-alert/api test
+```
+
+## Source : PokéData Events API v2
 
 L'adaptateur `PokeDataSource` cible par défaut :
 
 `https://pokedata.ovh/events/apiv2`
 
-Le endpoint est volontairement configurable :
+Le endpoint est configurable via `POKEDATA_EVENTS_API_URL`.
+
+Inspecter la source sans écrire en base :
 
 ```bash
-POKEDATA_EVENTS_API_URL="https://pokedata.ovh/events/apiv2" npm run source:pokedata
-```
-
-Le client :
-
-- suit la pagination ;
-- normalise les événements vers le contrat interne `SourceEvent` ;
-- déduplique sur l'identifiant source ;
-- conserve le payload brut pour faciliter le diagnostic ;
-- ignore les lignes qui n'ont pas d'identifiant stable ou de date exploitable ;
-- ne couple pas le reste de l'application au schéma PokéData.
-
-### Lancer localement
-
-Depuis la racine du dépôt :
-
-```bash
-npm install
-npm run --workspace @poke-event-alert/api typecheck
-npm run --workspace @poke-event-alert/api test
 npm run --workspace @poke-event-alert/api source:pokedata
 ```
 
-> Le schéma de l'API externe reste isolé dans `src/sources/pokedata`. Si PokéData renomme un champ ou si nous ajoutons une autre source, le modèle interne ne change pas.
+Récupérer la source et l'ingérer en PostgreSQL :
+
+```bash
+npm run --workspace @poke-event-alert/api ingest:pokedata
+```
+
+Le pipeline :
+
+- suit la pagination ;
+- normalise vers le contrat interne `SourceEvent` ;
+- déduplique par identifiant source ;
+- conserve le payload brut pour le diagnostic ;
+- calcule un hash uniquement sur les champs significatifs ;
+- classe les événements en NEW / UPDATED / UNCHANGED / MISSING ;
+- ne marque jamais automatiquement un événement comme annulé ;
+- désactive la détection MISSING lorsque la collecte est incomplète.
+
+Le schéma externe reste isolé dans `src/sources/pokedata`.
