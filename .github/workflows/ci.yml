@@ -74,3 +74,9 @@ jobs:
         env:
           GITHUB_PAGES: "true"
         run: npm run --workspace @poke-event-alert/web build
+
+      - name: Check PokéData browser CORS
+        run: |
+          headers="$(curl -fsSI 'https://pokedata.ovh/events/apiv2/_country/FR/_start/2026-09-28/_end/2026-09-29')"
+          echo "$headers"
+          echo "$headers" | grep -qi '^access-control-allow-origin:'
