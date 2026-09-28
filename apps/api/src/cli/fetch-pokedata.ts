@@ -9,6 +9,8 @@ try {
     JSON.stringify(
       {
         source: source.name,
+        scope: result.scope,
+        complete: result.complete,
         pagesFetched: result.pagesFetched,
         eventCount: result.events.length,
         warnings: result.warnings,
