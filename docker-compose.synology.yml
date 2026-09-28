@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-poke_event_alert}
+      POSTGRES_USER: ${POSTGRES_USER:-poke_event_alert}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - shared_buffers=32MB
+      - -c
+      - effective_cache_size=96MB
+      - -c
+      - work_mem=1MB
+      - -c
+      - maintenance_work_mem=16MB
+      - -c
+      - max_connections=20
+    mem_limit: 160m
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-poke_event_alert} -d ${POSTGRES_DB:-poke_event_alert}"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: ghcr.io/coeyn/poke-event-alert-api:latest
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment: &app-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-poke_event_alert}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-poke_event_alert}
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-https://coeyn.github.io/poke-event-alert}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://coeyn.github.io}
+      POKEDATA_EVENTS_API_URL: ${POKEDATA_EVENTS_API_URL:-https://pokedata.ovh/events/apiv2}
+      POKEDATA_COUNTRIES: ${POKEDATA_COUNTRIES:-FR}
+      POKEDATA_DAYS_AHEAD: ${POKEDATA_DAYS_AHEAD:-180}
+      SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-3600}
+      NODE_OPTIONS: --max-old-space-size=64
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["node", "apps/api/dist/cli/migrate.js"]
+
+  app:
+    image: ghcr.io/coeyn/poke-event-alert-api:latest
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      <<: *app-env
+      PORT: 3001
+      HOST: 0.0.0.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3001:3001"
+    command: ["node", "apps/api/dist/cli/serve-with-worker.js"]
+
+volumes:
+  postgres-data:
