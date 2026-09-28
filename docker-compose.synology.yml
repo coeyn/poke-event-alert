@@ -37,7 +37,11 @@ services:
     healthcheck:
       disable: true
     environment: &app-env
-      DATABASE_URL: postgresql://${POSTGRES_USER:-poke_event_alert}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-poke_event_alert}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-poke_event_alert}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB:-poke_event_alert}
       WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY}
       WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY}
       WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT}
