@@ -130,6 +130,9 @@ export function LiveData({ mode }: { mode: Mode }) {
                 </button>
               </div>
               {venue.leagueId && <div className="leagueId">League #{venue.leagueId}</div>}
+              <Link className="venueDetailLink" href={`/boutique/?key=${encodeURIComponent(venue.key)}`}>
+                Voir la boutique →
+              </Link>
               <div className="venueEvents">
                 <strong>{venue.events.length}</strong>
                 <span> événement{venue.events.length > 1 ? "s" : ""} dans les 30 prochains jours</span>
