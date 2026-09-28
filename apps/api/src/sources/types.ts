@@ -20,15 +20,26 @@ export type SourceEvent = {
   raw: unknown;
 };
 
+export type SourceFetchScope = {
+  countryCodes?: string[];
+  startsFrom?: string;
+  startsUntil?: string;
+};
+
 export type SourceFetchResult = {
   events: SourceEvent[];
   warnings: string[];
   pagesFetched: number;
   /**
-   * True only when the adapter believes it consumed the full source result.
+   * True only when the adapter believes it consumed the full filtered result.
    * Missing-event detection MUST NOT run for an incomplete fetch.
    */
   complete: boolean;
+  /**
+   * Describes the subset queried from the upstream source so absence detection
+   * never affects events outside that subset.
+   */
+  scope?: SourceFetchScope;
 };
 
 export interface EventSource {
