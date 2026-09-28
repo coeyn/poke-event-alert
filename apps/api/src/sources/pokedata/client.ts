@@ -125,10 +125,12 @@ export class PokeDataSource implements EventSource {
 
     let pageUrl: URL | undefined = new URL(this.endpoint);
     let pagesFetched = 0;
+    let complete = true;
 
     while (pageUrl && pagesFetched < this.maxPages) {
       if (seenUrls.has(pageUrl.toString())) {
         warnings.push(`Pagination loop detected at ${pageUrl.toString()}`);
+        complete = false;
         break;
       }
       seenUrls.add(pageUrl.toString());
@@ -170,6 +172,7 @@ export class PokeDataSource implements EventSource {
     }
 
     if (pageUrl && pagesFetched >= this.maxPages) {
+      complete = false;
       warnings.push(
         `Stopped after maxPages=${this.maxPages}; more PokéData pages may exist`
       );
@@ -188,7 +191,8 @@ export class PokeDataSource implements EventSource {
     return {
       events: uniqueEvents,
       warnings,
-      pagesFetched
+      pagesFetched,
+      complete
     };
   }
 }
