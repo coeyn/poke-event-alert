@@ -1,0 +1,12 @@
+{
+  "name": "poke-event-alert",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "echo \"Scaffold ready: install app dependencies in apps/web and apps/api\"",
+    "lint": "echo \"Lint configuration pending MVP scaffold\""
+  }
+}
