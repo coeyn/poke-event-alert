@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import type { Pool } from "pg";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerUserRoutes } from "./routes/users.js";
@@ -8,6 +9,19 @@ import { registerVenueRoutes } from "./routes/venues.js";
 export function createApp(pool: Pool) {
   const app = Fastify({
     logger: process.env.NODE_ENV !== "test"
+  });
+
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ??
+    "http://localhost:3000,https://coeyn.github.io"
+  )
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.register(cors, {
+    origin: corsOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   });
 
   app.setErrorHandler((error, request, reply) => {
