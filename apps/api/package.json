@@ -9,10 +9,13 @@
     "source:pokedata": "tsx src/cli/fetch-pokedata.ts",
     "db:migrate": "tsx src/cli/migrate.ts",
     "ingest:pokedata": "tsx src/cli/ingest-pokedata.ts",
-    "test:integration": "tsx --test src/**/*.integration.ts"
+    "test:integration": "tsx --test --test-concurrency=1 src/**/*.integration.ts",
+    "dev": "tsx watch src/cli/serve.ts",
+    "start": "tsx src/cli/serve.ts"
   },
   "dependencies": {
-    "pg": "^8.16.0"
+    "pg": "^8.16.0",
+    "fastify": "^5.6.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
