@@ -100,17 +100,26 @@ export function registerEventRoutes(app: FastifyInstance, pool: Pool) {
       return reply.code(404).send({ error: "Event not found" });
     }
 
-    const event = mapEvent(row);
     const ics = createIcs({
-      uid: `${event.sourceEventId}@poke-event-alert`,
-      title: event.title,
-      startsAt: event.startsAt!,
-      endsAt: event.endsAt,
-      venueName: event.venue?.name,
-      address: event.venue?.address,
-      city: event.venue?.city,
-      sourceUrl: event.sourceUrl,
-      description: [event.eventType, event.game].filter(Boolean).join(" — ")
+      uid: `${String(row.source_event_id)}@poke-event-alert`,
+      title: String(row.title),
+      startsAt:
+        row.starts_at instanceof Date
+          ? row.starts_at.toISOString()
+          : String(row.starts_at),
+      endsAt: row.ends_at
+        ? row.ends_at instanceof Date
+          ? row.ends_at.toISOString()
+          : String(row.ends_at)
+        : null,
+      venueName: row.venue_name ? String(row.venue_name) : null,
+      address: row.address ? String(row.address) : null,
+      city: row.city ? String(row.city) : null,
+      sourceUrl: row.source_url ? String(row.source_url) : null,
+      description: [row.event_type, row.game]
+        .filter(Boolean)
+        .map(String)
+        .join(" — ")
     });
 
     reply
