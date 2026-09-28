@@ -29,12 +29,3 @@ jobs:
       - name: Test API
         run: npm run --workspace @poke-event-alert/api test
 
-      - name: Live PokéData smoke test
-        if: github.ref == 'refs/heads/feat/database-ingestion'
-        continue-on-error: true
-        run: |
-          npm run --workspace @poke-event-alert/api source:pokedata
-          node --input-type=module -e 'const r=await fetch("https://pokedata.ovh/events/apiv2"); const j=await r.json(); console.log(JSON.stringify({headers:Object.fromEntries(r.headers),isArray:Array.isArray(j),length:Array.isArray(j)?j.length:undefined,keys:Array.isArray(j)?[]:Object.keys(j),metadata:j?.metadata},null,2));'
-          echo "--- API HELP ---"
-          curl -fsSL https://pokedata.ovh/events/apiv2/help | head -c 20000
-          echo
