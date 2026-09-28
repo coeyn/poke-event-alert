@@ -19,6 +19,8 @@ services:
       retries: 10
 
   migrate:
+    healthcheck:
+      disable: true
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -54,6 +56,8 @@ services:
       - "${API_PORT:-3001}:3001"
 
   worker:
+    healthcheck:
+      disable: true
     build:
       context: .
       dockerfile: apps/api/Dockerfile
