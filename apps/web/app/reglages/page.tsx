@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  PUBLIC_API_CONFIGURED,
+  getOrCreateUserId,
+  savePreferences
+} from "../../lib/api";
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  pushStatus
+} from "../../lib/push";
 
 type Settings = {
   challenge: boolean;
@@ -19,12 +29,23 @@ export default function ReglagesPage() {
     other: true
   });
   const [saved, setSaved] = useState(false);
+  const [pushSupported, setPushSupported] = useState(true);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMessage, setPushMessage] = useState("");
 
   useEffect(() => {
     try {
       const value = localStorage.getItem(KEY);
       if (value) setSettings(JSON.parse(value) as Settings);
     } catch {}
+
+    pushStatus()
+      .then((status) => {
+        setPushSupported(status.supported);
+        setPushSubscribed(status.subscribed);
+      })
+      .catch(() => setPushSupported(false));
   }, []);
 
   function toggle(key: keyof Settings) {
@@ -32,9 +53,46 @@ export default function ReglagesPage() {
     setSettings((current) => ({ ...current, [key]: !current[key] }));
   }
 
-  function save() {
+  async function save() {
     localStorage.setItem(KEY, JSON.stringify(settings));
+
+    if (PUBLIC_API_CONFIGURED) {
+      const userId = await getOrCreateUserId();
+      const eventTypes = (
+        ["challenge", "cup", "prerelease", "other"] as const
+      ).filter((type) => settings[type]);
+
+      await savePreferences(userId, {
+        eventTypes,
+        newEventEnabled: true,
+        eventUpdateEnabled: true,
+        reminderEnabled: false,
+        reminderHoursBefore: 24
+      });
+    }
+
     setSaved(true);
+  }
+
+  async function togglePush() {
+    setPushBusy(true);
+    setPushMessage("");
+
+    try {
+      if (pushSubscribed) {
+        await disablePushNotifications();
+        setPushSubscribed(false);
+        setPushMessage("Notifications désactivées.");
+      } else {
+        await enablePushNotifications();
+        setPushSubscribed(true);
+        setPushMessage("Notifications activées.");
+      }
+    } catch (error) {
+      setPushMessage(error instanceof Error ? error.message : "Erreur Push.");
+    } finally {
+      setPushBusy(false);
+    }
   }
 
   return (
@@ -42,7 +100,7 @@ export default function ReglagesPage() {
       <section className="pageIntro">
         <span className="eyebrow">Préférences</span>
         <h1>Mes alertes</h1>
-        <p>Choisis les événements pour lesquels tu souhaiteras être prévenu.</p>
+        <p>Choisis les événements pour lesquels tu souhaites être prévenu.</p>
       </section>
 
       <section className="settingsCard">
@@ -54,11 +112,34 @@ export default function ReglagesPage() {
       </section>
 
       <section className="settingsCard mutedCard">
-        <h2>Notifications</h2>
-        <p>Les notifications push seront activées quand le backend public sera déployé. La preview te permet déjà de tester la logique des favoris et préférences.</p>
+        <h2>Notifications Push</h2>
+
+        {!PUBLIC_API_CONFIGURED ? (
+          <p>Le moteur Push est prêt dans le projet. Il deviendra activable ici dès que l'API publique sera hébergée.</p>
+        ) : !pushSupported ? (
+          <p>Les notifications Push ne sont pas supportées par ce navigateur ou cet appareil.</p>
+        ) : (
+          <>
+            <p>
+              {pushSubscribed
+                ? "Cet appareil est abonné aux alertes."
+                : "Active les alertes pour les boutiques que tu suis."}
+            </p>
+            <button className="secondaryButton" onClick={togglePush} disabled={pushBusy}>
+              {pushBusy
+                ? "Traitement…"
+                : pushSubscribed
+                  ? "Désactiver les notifications"
+                  : "Activer les notifications"}
+            </button>
+            {pushMessage && <p>{pushMessage}</p>}
+          </>
+        )}
       </section>
 
-      <button className="primaryButton" onClick={save}>{saved ? "✓ Enregistré" : "Enregistrer mes préférences"}</button>
+      <button className="primaryButton" onClick={save}>
+        {saved ? "✓ Enregistré" : "Enregistrer mes préférences"}
+      </button>
     </>
   );
 }
