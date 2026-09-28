@@ -205,15 +205,36 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
   ]);
   if (venueName && venueName !== title) event.venueName = venueName;
 
-  const sourceVenueId = lookupString(record, [
+  const directVenueId = stringValue(record, [
     "shop_id",
     "shopId",
     "venue_id",
     "venueId",
     "store_id",
-    "storeId",
-    "id"
+    "storeId"
   ]);
+
+  const nestedVenueId = [
+    asRecord(record.venue),
+    asRecord(record.shop),
+    asRecord(record.store),
+    asRecord(record.location)
+  ]
+    .filter((value): value is JsonRecord => Boolean(value))
+    .map((value) =>
+      stringValue(value, [
+        "id",
+        "shop_id",
+        "shopId",
+        "venue_id",
+        "venueId",
+        "store_id",
+        "storeId"
+      ])
+    )
+    .find(Boolean);
+
+  const sourceVenueId = directVenueId ?? nestedVenueId;
   if (sourceVenueId && sourceVenueId !== sourceEventId) {
     event.sourceVenueId = sourceVenueId;
   }
