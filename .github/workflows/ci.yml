@@ -28,3 +28,8 @@ jobs:
 
       - name: Test API
         run: npm run --workspace @poke-event-alert/api test
+
+      - name: Live PokéData smoke test
+        if: github.ref == 'refs/heads/feat/database-ingestion'
+        continue-on-error: true
+        run: npm run --workspace @poke-event-alert/api source:pokedata
