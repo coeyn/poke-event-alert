@@ -120,6 +120,17 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
   assert.equal(eventDetail.statusCode, 200);
   assert.equal(eventDetail.json().title, "League Challenge de test");
 
+  const calendar = await app.inject({
+    method: "GET",
+    url: `/events/${eventId}/calendar.ics`
+  });
+  assert.equal(calendar.statusCode, 200);
+  assert.match(calendar.headers["content-type"] ?? "", /^text\/calendar/);
+  assert.match(calendar.body, /BEGIN:VCALENDAR/);
+  assert.match(calendar.body, /SUMMARY:League Challenge de test/);
+  assert.match(calendar.body, /LOCATION:BD TEST/);
+  assert.match(calendar.body, /END:VCALENDAR/);
+
   const user = await app.inject({
     method: "POST",
     url: "/users",
