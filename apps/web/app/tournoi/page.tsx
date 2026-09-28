@@ -10,6 +10,7 @@ import {
   type PreviewEvent
 } from "../../lib/preview";
 import { Loading } from "../../components/Loading";
+import { previewIcsFilename, previewIcsHref } from "../../lib/ics";
 
 export default function TournamentPage() {
   const [event, setEvent] = useState<PreviewEvent | null>(null);
@@ -80,6 +81,14 @@ export default function TournamentPage() {
         <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={toggle}>
           {followed ? "★ Boutique suivie" : "☆ Suivre cette boutique"}
         </button>
+
+        <a
+          className="secondaryButton"
+          href={previewIcsHref(event)}
+          download={previewIcsFilename(event)}
+        >
+          ＋ Ajouter au calendrier
+        </a>
 
         <div className="sourceNotice">
           <strong>À propos du lien officiel</strong>

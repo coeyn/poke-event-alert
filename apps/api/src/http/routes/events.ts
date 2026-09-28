@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Pool } from "pg";
+import { createIcs } from "../../calendar/ical.js";
 import {
   dateParam,
   mapEvent,
@@ -81,6 +82,54 @@ export function registerEventRoutes(app: FastifyInstance, pool: Pool) {
         hasMore: offset + result.rows.length < total
       }
     };
+  });
+
+  app.get("/events/:id/calendar.ics", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const result = await pool.query(
+      `
+        ${EVENT_SELECT}
+        WHERE e.id = $1::uuid
+        LIMIT 1
+      `,
+      [id]
+    );
+
+    const row = result.rows[0];
+    if (!row) {
+      return reply.code(404).send({ error: "Event not found" });
+    }
+
+    const ics = createIcs({
+      uid: `${String(row.source_event_id)}@poke-event-alert`,
+      title: String(row.title),
+      startsAt:
+        row.starts_at instanceof Date
+          ? row.starts_at.toISOString()
+          : String(row.starts_at),
+      endsAt: row.ends_at
+        ? row.ends_at instanceof Date
+          ? row.ends_at.toISOString()
+          : String(row.ends_at)
+        : null,
+      venueName: row.venue_name ? String(row.venue_name) : null,
+      address: row.address ? String(row.address) : null,
+      city: row.city ? String(row.city) : null,
+      sourceUrl: row.source_url ? String(row.source_url) : null,
+      description: [row.event_type, row.game]
+        .filter(Boolean)
+        .map(String)
+        .join(" — ")
+    });
+
+    reply
+      .type("text/calendar; charset=utf-8")
+      .header(
+        "content-disposition",
+        'attachment; filename="pokemon-event.ics"'
+      );
+
+    return ics;
   });
 
   app.get("/events/:id", async (request, reply) => {
