@@ -34,4 +34,4 @@ jobs:
         continue-on-error: true
         run: |
           npm run --workspace @poke-event-alert/api source:pokedata
-          node --input-type=module -e 'const r=await fetch("https://pokedata.ovh/events/apiv2"); const j=await r.json(); console.log(JSON.stringify({headers:Object.fromEntries(r.headers),isArray:Array.isArray(j),length:Array.isArray(j)?j.length:undefined,keys:Array.isArray(j)?[]:Object.keys(j),pagination:j?.pagination,meta:j?.meta,page:j?.page,total_pages:j?.total_pages,totalPages:j?.totalPages,next:j?.next,limit:j?.limit,offset:j?.offset,total:j?.total},null,2));'
+          node --input-type=module -e 'const r=await fetch("https://pokedata.ovh/events/apiv2"); const j=await r.json(); console.log(JSON.stringify({headers:Object.fromEntries(r.headers),isArray:Array.isArray(j),length:Array.isArray(j)?j.length:undefined,keys:Array.isArray(j)?[]:Object.keys(j),metadata:j?.metadata,pagination:j?.pagination,meta:j?.meta,page:j?.page,total_pages:j?.total_pages,totalPages:j?.totalPages,next:j?.next,limit:j?.limit,offset:j?.offset,total:j?.total},null,2));'
