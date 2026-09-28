@@ -8,6 +8,8 @@ on:
       - "apps/web/**"
       - ".github/workflows/pages.yml"
       - "package.json"
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -35,9 +37,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Fetch latest Play! Pokémon events
+        run: npm run --workspace @poke-event-alert/web preview:data
+
       - name: Build static app
         env:
           GITHUB_PAGES: "true"
+          NEXT_PUBLIC_BASE_PATH: "/poke-event-alert"
         run: npm run --workspace @poke-event-alert/web build
 
       - name: Configure GitHub Pages
