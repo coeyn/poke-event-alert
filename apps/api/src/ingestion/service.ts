@@ -2,7 +2,8 @@ import type { Pool, PoolClient } from "pg";
 import type {
   EventSource,
   SourceEvent,
-  SourceFetchResult
+  SourceFetchResult,
+  SourceFetchScope
 } from "../sources/types.js";
 import {
   diffSnapshots,
@@ -255,21 +256,46 @@ async function markMissing(
   client: PoolClient,
   source: string,
   seenSourceEventIds: string[],
-  now: Date
+  now: Date,
+  scope?: SourceFetchScope
 ): Promise<number> {
+  const countryCodes =
+    scope?.countryCodes && scope.countryCodes.length > 0
+      ? scope.countryCodes
+      : null;
+
   const result = await client.query(
     `
-      UPDATE events
+      UPDATE events AS e
       SET
         status = 'missing',
-        missing_since = COALESCE(missing_since, $2)
+        missing_since = COALESCE(e.missing_since, $2)
       WHERE
-        source = $1
-        AND status = 'active'
-        AND starts_at >= $2
-        AND NOT (source_event_id = ANY($3::text[]))
+        e.source = $1
+        AND e.status = 'active'
+        AND e.starts_at >= $2
+        AND ($4::date IS NULL OR e.starts_at >= $4::date)
+        AND ($5::date IS NULL OR e.starts_at < ($5::date + INTERVAL '1 day'))
+        AND (
+          $6::text[] IS NULL
+          OR EXISTS (
+            SELECT 1
+            FROM venues AS v
+            WHERE
+              v.id = e.venue_id
+              AND UPPER(v.country_code) = ANY($6::text[])
+          )
+        )
+        AND NOT (e.source_event_id = ANY($3::text[]))
     `,
-    [source, now, seenSourceEventIds]
+    [
+      source,
+      now,
+      seenSourceEventIds,
+      scope?.startsFrom ?? null,
+      scope?.startsUntil ?? null,
+      countryCodes?.map((code) => code.toUpperCase()) ?? null
+    ]
   );
 
   return result.rowCount ?? 0;
@@ -308,7 +334,8 @@ async function persistFetchResult(
       client,
       sourceName,
       result.events.map((event) => event.sourceEventId),
-      now
+      now,
+      result.scope
     );
   }
 
