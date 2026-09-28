@@ -2,44 +2,86 @@
 
 Backend de Poké Event Alert.
 
-## Première source : PokéData Events API v2
+## Modules MVP
 
-L'adaptateur `PokeDataSource` utilise l'API événements v2 de PokéData et la convertit vers le contrat interne `SourceEvent`.
+- `sources/` — adaptateurs de sources
+- `ingestion/` — récupération, normalisation et détection des changements
+- `events/` — persistance
+- `venues/` — boutiques / Ligues
+- `subscriptions/` — favoris et préférences
+- `notifications/` — Web Push
+- `calendar/` — génération iCalendar
 
-Par défaut, le MVP récupère :
+## Stack
 
-- les événements en France (`FR`) ;
-- à partir d'aujourd'hui ;
-- jusqu'à 180 jours dans le futur.
+- Node.js
+- TypeScript
+- PostgreSQL
+- `pg`
 
-Ces valeurs sont configurables :
+## Développement local
 
-```env
-POKEDATA_EVENTS_API_URL=https://pokedata.ovh/events/apiv2
-POKEDATA_COUNTRIES=FR
-POKEDATA_DAYS_AHEAD=180
+Démarrer PostgreSQL :
+
+```bash
+docker compose up -d postgres
 ```
 
-Le client utilise les filtres de chemin documentés par PokéData (`_country`, `_start`, `_end`) et suit la pagination v2 avec `metadata.current_page` / `metadata.total_pages` et `_page/N`.
-
-## Garanties de l'adaptateur
-
-- pagination complète du périmètre demandé ;
-- normalisation des champs réellement observés dans l'API v2 ;
-- déduplication par identifiant source ;
-- conservation du payload brut pour le diagnostic ;
-- signal `complete=false` si la collecte est tronquée ;
-- retour du `scope` exact de la collecte pour sécuriser ensuite la détection des événements disparus.
-
-## Vérifications
+Installer les dépendances et créer le schéma :
 
 ```bash
 npm install
+npm run --workspace @poke-event-alert/api db:migrate
+```
+
+Lancer les contrôles :
+
+```bash
 npm run --workspace @poke-event-alert/api typecheck
 npm run --workspace @poke-event-alert/api test
+```
+
+## Source : PokéData Events API v2
+
+L'adaptateur `PokeDataSource` cible par défaut :
+
+`https://pokedata.ovh/events/apiv2`
+
+Le endpoint est configurable via `POKEDATA_EVENTS_API_URL`.
+
+Inspecter la source sans écrire en base :
+
+```bash
 npm run --workspace @poke-event-alert/api source:pokedata
 ```
 
-Le test live réalisé pendant le développement a confirmé le format v2, ses métadonnées de pagination et les champs utilisés pour les boutiques, Ligues, dates, produits et URLs.
+Récupérer la source et l'ingérer en PostgreSQL :
 
-> Le reste de l'application ne doit jamais dépendre directement du schéma PokéData. Toute adaptation à une évolution de la source reste confinée à `src/sources/pokedata`.
+```bash
+npm run --workspace @poke-event-alert/api ingest:pokedata
+```
+
+Le pipeline :
+
+- suit la pagination ;
+- normalise vers le contrat interne `SourceEvent` ;
+- déduplique par identifiant source ;
+- conserve le payload brut pour le diagnostic ;
+- calcule un hash uniquement sur les champs significatifs ;
+- classe les événements en NEW / UPDATED / UNCHANGED / MISSING ;
+- ne marque jamais automatiquement un événement comme annulé ;
+- désactive la détection MISSING lorsque la collecte est incomplète.
+
+Le schéma externe reste isolé dans `src/sources/pokedata`.
+
+
+## Tests d'intégration
+
+La CI démarre un PostgreSQL isolé, applique toutes les migrations puis vérifie le cycle d'ingestion complet :
+
+```bash
+npm run --workspace @poke-event-alert/api db:migrate
+npm run --workspace @poke-event-alert/api test:integration
+```
+
+Le scénario couvre la création initiale, une collecte identique sans doublon, une modification d'événement et la disparition d'un événement futur dans le même périmètre de collecte.
