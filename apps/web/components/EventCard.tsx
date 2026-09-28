@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { formatDate, type PreviewEvent } from "../lib/preview";
 
 export function EventCard({ event }: { event: PreviewEvent }) {
   return (
-    <article className="eventCard">
+    <Link className="eventCard" href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
       <div className="eventDate">
         <b>{new Date(event.startsAt).getDate()}</b>
         <span>{new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(new Date(event.startsAt))}</span>
@@ -16,7 +17,7 @@ export function EventCard({ event }: { event: PreviewEvent }) {
         <p className="venueName">{event.venueName}</p>
         <p className="meta">{event.city || event.address || "France"} · {formatDate(event.startsAt)}</p>
       </div>
-      <a className="arrowLink" href={event.sourceUrl} target="_blank" rel="noreferrer" aria-label="Voir la source officielle">↗</a>
-    </article>
+      <span className="arrowLink" aria-hidden="true">›</span>
+    </Link>
   );
 }

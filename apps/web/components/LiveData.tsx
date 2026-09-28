@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { EventCard } from "./EventCard";
 import { Loading } from "./Loading";
@@ -135,10 +136,10 @@ export function LiveData({ mode }: { mode: Mode }) {
               </div>
               <div className="miniEvents">
                 {venue.events.slice(0, 3).map((event) => (
-                  <a key={event.id} href={event.sourceUrl} target="_blank" rel="noreferrer">
+                  <Link key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
                     <span>{event.type}</span>
                     <b>{formatShort(event.startsAt)}</b>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </article>
