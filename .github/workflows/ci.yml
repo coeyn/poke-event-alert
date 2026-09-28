@@ -90,5 +90,8 @@ jobs:
       - name: Validate production compose
         run: docker compose --env-file .env.production.example -f docker-compose.prod.yml config
 
+      - name: Validate Synology compose
+        run: docker compose --env-file .env.synology.example -f docker-compose.synology.yml config
+
       - name: Build production API image
         run: docker build -f apps/api/Dockerfile .
