@@ -56,12 +56,6 @@ export function HomeDashboard() {
   if (error) return <div className="notice error">{error}</div>;
 
   return <>
-    <div className="homeStatus" aria-label="Vue d'ensemble">
-      <div><strong>{favorites.length}</strong><span>Boutique{favorites.length > 1 ? "s" : ""} suivie{favorites.length > 1 ? "s" : ""}</span></div>
-      <div><strong>{personalEvents.length}</strong><span>Événement{personalEvents.length > 1 ? "s" : ""} pour toi</span></div>
-      <div><strong>{recentEvents.length}</strong><span>Ajouté{recentEvents.length > 1 ? "s" : ""} cette semaine</span></div>
-    </div>
-    <div className="homeQuickActions"><Link href="/explorer/">⌕ <span>Rechercher un événement ou une boutique</span><span aria-hidden="true">→</span></Link><Link href="/reglages/">⚑ <span>Gérer mes alertes</span><span aria-hidden="true">→</span></Link></div>
     <div className="homeColumns">
       <div className="homePrimary">
         <section className="homeSection">

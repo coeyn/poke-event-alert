@@ -87,16 +87,6 @@ button:disabled { cursor: not-allowed; }
 .loadMoreButton { display: block; min-height: 44px; margin: 18px auto; padding: 0 18px; border: 1px solid #d4ddd6; border-radius: 8px; background: #fff; color: var(--text); font-weight: 750; }
 .loadMoreButton:hover { border-color: var(--accent); color: var(--accent); }
 
-.homeStatus { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
-.homeStatus > div { display: flex; flex-direction: column; gap: 3px; padding: 17px 20px; border-right: 1px solid var(--line); }
-.homeStatus > div:last-child { border-right: 0; }
-.homeStatus strong { font-size: 24px; letter-spacing: -.05em; }
-.homeStatus span { color: var(--muted); font-size: 11px; }
-.homeQuickActions { display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px; margin-bottom: 28px; }
-.homeQuickActions a { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 15px; border: 1px solid #dce3dd; border-radius: 9px; background: #fff; color: var(--accent); font-size: 19px; font-weight: 650; }
-.homeQuickActions a:hover { border-color: var(--accent); }
-.homeQuickActions a span:nth-child(1) { flex: 1; color: var(--text); font-size: 12px; font-weight: 750; }
-.homeQuickActions a span:last-child { font-size: 17px; }
 .homeColumns { display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 22px; align-items: start; }
 .homePrimary, .homeSecondary { min-width: 0; }
 .homeSection { margin-bottom: 27px; }
@@ -266,11 +256,6 @@ button:disabled { cursor: not-allowed; }
   .filterBar { gap: 6px; }
   .filterChip { min-height: 34px; padding: 0 9px; font-size: 11px; }
   .filterChip.favoriteFilter { margin-left: 0; }
-  .homeStatus > div { padding: 12px 9px; }
-  .homeStatus strong { font-size: 19px; }
-  .homeStatus span { font-size: 10px; line-height: 1.3; }
-  .homeQuickActions { grid-template-columns: 1fr; gap: 7px; margin-bottom: 24px; }
-  .homeQuickActions a { min-height: 47px; }
   .homeColumns { grid-template-columns: 1fr; gap: 0; }
   .miniCalendar { padding: 8px; gap: 2px; }
   .miniDay { min-height: 69px; }
