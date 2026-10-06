@@ -7,6 +7,7 @@ import { Loading } from "../../components/Loading";
 import {
   loadUpcomingFrance,
   readFavorites,
+  refreshVenueLive,
   toggleFavorite,
   venuesFromEvents,
   type PreviewVenue
@@ -16,6 +17,7 @@ import { syncVenueFollow } from "../../lib/follows";
 export default function BoutiquePage() {
   const [venue, setVenue] = useState<PreviewVenue | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [followed, setFollowed] = useState(false);
   const [followError, setFollowError] = useState("");
 
@@ -30,9 +32,20 @@ export default function BoutiquePage() {
       .then((events) => {
         const found = venuesFromEvents(events).find((item) => item.key === key) ?? null;
         setVenue(found);
-        if (found) setFollowed(readFavorites().includes(found.key));
+        setLoading(false);
+
+        if (!found) return;
+
+        setFollowed(readFavorites().includes(found.key));
+        setRefreshing(true);
+        refreshVenueLive(found)
+          .then((liveVenue) => setVenue(liveVenue))
+          .catch(() => {
+            // Keep the CDN snapshot if the NAS/API is unavailable.
+          })
+          .finally(() => setRefreshing(false));
       })
-      .finally(() => setLoading(false));
+      .catch(() => setLoading(false));
   }, []);
 
   if (loading) return <Loading />;
@@ -96,7 +109,7 @@ export default function BoutiquePage() {
 
       <div className="sectionHead detailEventsHead">
         <h2>Prochains événements</h2>
-        <span>{venue.events.length}</span>
+        <span>{refreshing ? "↻" : venue.events.length}</span>
       </div>
 
       <div className="eventList">
