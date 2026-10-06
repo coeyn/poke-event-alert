@@ -9,8 +9,7 @@ import {
 import {
   disablePushNotifications,
   enablePushNotifications,
-  pushStatus,
-  sendPushTest
+  pushStatus
 } from "../../lib/push";
 import { DEFAULT_SETTINGS, readLocalSettings, saveLocalSettings, type LocalSettings } from "../../lib/local-settings";
 import { readBlockedVenues, setVenueBlocked, type BlockedVenue } from "../../lib/blocked-venues";
@@ -115,26 +114,6 @@ export default function ReglagesPage() {
     }
   }
 
-  async function testPush() {
-    setPushBusy(true);
-    setPushMessage("");
-
-    try {
-      const result = await sendPushTest();
-      setPushMessage(
-        `Notification de test envoyée (${result.sent}/${result.subscriptions}).`
-      );
-    } catch (error) {
-      setPushMessage(
-        error instanceof Error
-          ? error.message
-          : "Impossible d'envoyer la notification de test."
-      );
-    } finally {
-      setPushBusy(false);
-    }
-  }
-
   return (
     <>
       <header className="workspaceHead"><h1>Réglages</h1></header>
@@ -184,12 +163,6 @@ export default function ReglagesPage() {
                   ? "Désactiver les notifications"
                   : "Activer les notifications"}
             </button>
-
-            {pushSubscribed && (
-              <button className="secondaryButton" onClick={testPush} disabled={pushBusy}>
-                Envoyer une notification de test
-              </button>
-            )}
 
             {pushMessage && <p>{pushMessage}</p>}
           </>
