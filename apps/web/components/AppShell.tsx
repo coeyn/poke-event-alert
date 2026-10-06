@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/", label: "Événements", icon: "◉" },
-  { href: "/boutiques/", label: "Boutiques", icon: "⌕" },
-  { href: "/mes-boutiques/", label: "Suivies", icon: "★" },
+  { href: "/", label: "Explorer", icon: "⌕" },
+  { href: "/calendrier/", label: "Calendrier", icon: "▦" },
+  { href: "/mes-boutiques/", label: "Favoris", icon: "★" },
   { href: "/reglages/", label: "Réglages", icon: "⚙" }
 ];
 
@@ -23,10 +23,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <small>Ne rate plus ton prochain tournoi</small>
           </span>
         </Link>
-        <span className="liveBadge">PREVIEW</span>
+        <span className="liveBadge">PLAY! POKÉMON</span>
       </header>
 
       <main className="main">{children}</main>
+
+      <footer className="appFooter">Projet communautaire indépendant, sans affiliation avec The Pokémon Company International. Vérifie les détails auprès de la boutique ou de la source officielle.</footer>
 
       <nav className="bottomNav" aria-label="Navigation principale">
         {links.map((link) => {

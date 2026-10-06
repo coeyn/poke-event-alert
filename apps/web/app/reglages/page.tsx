@@ -12,34 +12,21 @@ import {
   pushStatus,
   sendPushTest
 } from "../../lib/push";
-
-type Settings = {
-  challenge: boolean;
-  cup: boolean;
-  prerelease: boolean;
-  other: boolean;
-};
-
-const KEY = "poke-event-alert:preview-settings";
+import { DEFAULT_SETTINGS, readLocalSettings, saveLocalSettings, type LocalSettings } from "../../lib/local-settings";
 
 export default function ReglagesPage() {
-  const [settings, setSettings] = useState<Settings>({
-    challenge: true,
-    cup: true,
-    prerelease: true,
-    other: true
-  });
+  const [settings, setSettings] = useState<LocalSettings>(DEFAULT_SETTINGS);
   const [saved, setSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [pushSupported, setPushSupported] = useState(true);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMessage, setPushMessage] = useState("");
+  const [locationMessage, setLocationMessage] = useState("");
+  const [locationBusy, setLocationBusy] = useState(false);
 
   useEffect(() => {
-    try {
-      const value = localStorage.getItem(KEY);
-      if (value) setSettings(JSON.parse(value) as Settings);
-    } catch {}
+    setSettings(readLocalSettings());
 
     pushStatus()
       .then((status) => {
@@ -49,30 +36,59 @@ export default function ReglagesPage() {
       .catch(() => setPushSupported(false));
   }, []);
 
-  function toggle(key: keyof Settings) {
+  function toggle(key: "challenge" | "cup" | "prerelease" | "other") {
     setSaved(false);
     setSettings((current) => ({ ...current, [key]: !current[key] }));
   }
 
   async function save() {
-    localStorage.setItem(KEY, JSON.stringify(settings));
+    saveLocalSettings(settings);
+    setSaved(true);
+    setSaveMessage("");
 
     if (PUBLIC_API_CONFIGURED) {
-      const userId = await getOrCreateUserId();
-      const eventTypes = (
-        ["challenge", "cup", "prerelease", "other"] as const
-      ).filter((type) => settings[type]);
+      try {
+        const userId = await getOrCreateUserId();
+        const eventTypes = (
+          ["challenge", "cup", "prerelease", "other"] as const
+        ).filter((type) => settings[type]);
 
-      await savePreferences(userId, {
-        eventTypes,
-        newEventEnabled: true,
-        eventUpdateEnabled: true,
-        reminderEnabled: false,
-        reminderHoursBefore: 24
-      });
+        await savePreferences(userId, {
+          eventTypes,
+          newEventEnabled: true,
+          eventUpdateEnabled: true,
+          reminderEnabled: false,
+          reminderHoursBefore: 24
+        });
+      } catch {
+        setSaveMessage("Enregistré sur cet appareil. La synchronisation des alertes est momentanément indisponible.");
+      }
     }
+  }
 
-    setSaved(true);
+  function locate() {
+    if (!navigator.geolocation) {
+      setLocationMessage("La position n'est pas disponible sur cet appareil.");
+      return;
+    }
+    setLocationBusy(true);
+    setLocationMessage("");
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setSettings((current) => ({
+          ...current,
+          location: { latitude: coords.latitude, longitude: coords.longitude }
+        }));
+        setSaved(false);
+        setLocationBusy(false);
+        setLocationMessage("Position obtenue. Enregistre tes préférences pour l'utiliser.");
+      },
+      () => {
+        setLocationBusy(false);
+        setLocationMessage("Position indisponible. Autorise la localisation dans ton navigateur et réessaie.");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
   }
 
   async function togglePush() {
@@ -125,6 +141,16 @@ export default function ReglagesPage() {
       </section>
 
       <section className="settingsCard">
+        <h2>Découvrir autour de moi</h2>
+        <p className="settingHint">Le calendrier affiche toujours les événements de tes boutiques favorites. Ajoute aussi ceux d'autres boutiques dans un rayon autour de ta position.</p>
+        <label className="rangeLabel" htmlFor="discovery-radius">Rayon de découverte <strong>{settings.discoveryRadiusKm === 0 ? "Désactivé" : `${settings.discoveryRadiusKm} km`}</strong></label>
+        <input id="discovery-radius" className="rangeInput" type="range" min="0" max="200" step="10" value={settings.discoveryRadiusKm} onChange={(event) => { setSaved(false); setSettings((current) => ({ ...current, discoveryRadiusKm: Number(event.target.value) })); }} />
+        <button className="secondaryButton" type="button" onClick={locate} disabled={locationBusy}>{locationBusy ? "Localisation…" : settings.location ? "Actualiser ma position" : "Utiliser ma position"}</button>
+        {settings.location && <><button className="secondaryButton" type="button" onClick={() => { setSaved(false); setSettings((current) => ({ ...current, location: null, discoveryRadiusKm: 0 })); setLocationMessage("Position retirée. Enregistre tes préférences pour confirmer."); }}>Effacer ma position</button><p className="settingHint">Position enregistrée sur cet appareil uniquement.</p></>}
+        {locationMessage && <p className="settingHint" role="status">{locationMessage}</p>}
+      </section>
+
+      <section className="settingsCard">
         <h2>Types d'événements</h2>
         <Setting label="League Challenge" checked={settings.challenge} onChange={() => toggle("challenge")} />
         <Setting label="League Cup" checked={settings.cup} onChange={() => toggle("cup")} />
@@ -168,6 +194,7 @@ export default function ReglagesPage() {
       <button className="primaryButton" onClick={save}>
         {saved ? "✓ Enregistré" : "Enregistrer mes préférences"}
       </button>
+      {saveMessage && <p className="settingHint" role="status">{saveMessage}</p>}
     </>
   );
 }

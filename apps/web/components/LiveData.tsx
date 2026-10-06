@@ -18,7 +18,7 @@ import {
 } from "../lib/follows";
 import { loadLiveVenueCounts } from "../lib/venue-counts";
 
-type Mode = "events" | "venues" | "favorites";
+type Mode = "discover" | "events" | "venues" | "favorites";
 
 export function LiveData({ mode }: { mode: Mode }) {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
@@ -28,6 +28,9 @@ export function LiveData({ mode }: { mode: Mode }) {
   const [error, setError] = useState("");
   const [followError, setFollowError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"events" | "venues">("events");
+  const [visibleCount, setVisibleCount] = useState(40);
+  const activeMode = mode === "discover" ? tab : mode;
 
   useEffect(() => {
     setFavorites(readFavorites());
@@ -58,8 +61,7 @@ export function LiveData({ mode }: { mode: Mode }) {
             .join(" ")
             .toLowerCase()
             .includes(q)
-        )
-        .slice(0, 80),
+        ),
     [events, q]
   );
 
@@ -81,10 +83,10 @@ export function LiveData({ mode }: { mode: Mode }) {
   );
 
   useEffect(() => {
-    if (mode === "events" || venues.length === 0) return;
+    if (activeMode === "events" || venues.length === 0) return;
 
     const targets =
-      mode === "favorites"
+      activeMode === "favorites"
         ? favoriteVenues.slice(0, 100)
         : q
           ? filteredVenues.slice(0, 100)
@@ -93,7 +95,7 @@ export function LiveData({ mode }: { mode: Mode }) {
     if (targets.length === 0) return;
 
     let cancelled = false;
-    const delay = mode === "venues" ? 300 : 0;
+    const delay = activeMode === "venues" ? 300 : 0;
     const timer = window.setTimeout(() => {
       void loadLiveVenueCounts(targets)
         .then((counts) => {
@@ -110,7 +112,7 @@ export function LiveData({ mode }: { mode: Mode }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [mode, q, venues.length, filteredVenues, favoriteVenues]);
+  }, [activeMode, q, venues.length, filteredVenues, favoriteVenues]);
 
   async function favorite(venue: PreviewVenue) {
     setFollowError("");
@@ -132,52 +134,61 @@ export function LiveData({ mode }: { mode: Mode }) {
   if (loading) return <Loading />;
   if (error) return <div className="notice error">{error}</div>;
 
-  if (mode === "events") {
+  const controls = mode === "discover" ? <>
+    <label className="searchBox"><span aria-hidden="true">⌕</span><input aria-label="Rechercher un événement ou une boutique" value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Événement, boutique, ville…" /></label>
+    <div className="discoverTabs" role="tablist" aria-label="Résultats de recherche"><button type="button" role="tab" aria-selected={tab === "events"} className={tab === "events" ? "active" : ""} onClick={() => { setTab("events"); setVisibleCount(40); }}>Événements <span>{filteredEvents.length}</span></button><button type="button" role="tab" aria-selected={tab === "venues"} className={tab === "venues" ? "active" : ""} onClick={() => { setTab("venues"); setVisibleCount(40); }}>Boutiques <span>{filteredVenues.length}</span></button></div>
+  </> : null;
+
+  if (activeMode === "events") {
     return (
       <>
-        <div className="searchBox">
+        {controls ?? <div className="searchBox">
           <span>⌕</span>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Boutique, ville, Challenge, Cup…" />
-        </div>
+          <input value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Boutique, ville, Challenge, Cup…" />
+        </div>}
         <div className="sectionHead">
           <h2>Prochains événements</h2>
-          <span>{filteredEvents.length}{events.length > 80 && !q ? "+" : ""}</span>
+          <span>{filteredEvents.length}</span>
         </div>
         <div className="eventList">
-          {filteredEvents.map((event) => <EventCard key={event.id} event={event} />)}
+          {filteredEvents.slice(0, visibleCount).map((event) => <EventCard key={event.id} event={event} />)}
         </div>
+        {visibleCount < filteredEvents.length && <button className="loadMoreButton" type="button" onClick={() => setVisibleCount((count) => count + 40)}>Voir plus d'événements</button>}
+        {filteredEvents.length === 0 && <div className="emptyState"><h3>Aucun événement trouvé</h3><p>Essaie une autre recherche.</p></div>}
       </>
     );
   }
 
-  const list = mode === "favorites" ? favoriteVenues : filteredVenues;
+  const list = activeMode === "favorites" ? favoriteVenues : filteredVenues;
 
   return (
     <>
+      {controls}
       {mode === "venues" && (
         <div className="searchBox">
           <span>⌕</span>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nom, ville ou League ID…" />
+          <input value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Nom, ville ou League ID…" />
         </div>
       )}
 
       {followError && <div className="notice error">{followError}</div>}
 
       <div className="sectionHead">
-        <h2>{mode === "favorites" ? "Mes boutiques" : "Boutiques avec des events"}</h2>
+        <h2>{activeMode === "favorites" ? "Mes boutiques" : "Boutiques avec des événements"}</h2>
         <span>{list.length}</span>
       </div>
 
-      {mode === "favorites" && list.length === 0 && (
+      {activeMode === "favorites" && list.length === 0 && (
         <div className="emptyState">
           <div>★</div>
           <h3>Aucune boutique suivie</h3>
           <p>Va dans « Boutiques » et ajoute celles que tu veux surveiller.</p>
         </div>
       )}
+      {activeMode === "venues" && list.length === 0 && <div className="emptyState"><h3>Aucune boutique trouvée</h3><p>Essaie un autre nom ou une autre ville.</p></div>}
 
       <div className="venueGrid">
-        {list.map((venue) => {
+        {(activeMode === "favorites" ? list : list.slice(0, visibleCount)).map((venue) => {
           const followed = favorites.includes(venue.key);
           const eventCount = liveCounts[venue.key] ?? venue.events.length;
           return (
@@ -215,6 +226,7 @@ export function LiveData({ mode }: { mode: Mode }) {
           );
         })}
       </div>
+      {activeMode === "venues" && visibleCount < list.length && <button className="loadMoreButton" type="button" onClick={() => setVisibleCount((count) => count + 40)}>Voir plus de boutiques</button>}
     </>
   );
 }

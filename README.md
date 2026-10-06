@@ -118,6 +118,16 @@ Le MVP est déjà fonctionnel sur plusieurs briques :
 
 Le chantier en cours concerne notamment **l'ergonomie et la refonte visuelle du frontend**.
 
+## Démarrage local
+
+```bash
+npm install
+npm run --workspace @poke-event-alert/web preview:data
+npm run --workspace @poke-event-alert/web dev
+```
+
+Ouvrir `http://localhost:3000`. Le snapshot local est régénéré par `preview:data` et n'est pas versionné. La page Explorer réunit événements et boutiques. Le calendrier combine les boutiques suivies avec, si le joueur l'active, les événements dans un rayon autour de sa position. La position et le rayon sont conservés uniquement dans le navigateur. La gestion partagée des inscriptions boutique est cadrée dans [`docs/REGISTRATIONS.md`](docs/REGISTRATIONS.md) pour la phase backend.
+
 ### Pour les agents de code / Codex
 
 Lire **[`AGENTS.md`](AGENTS.md)** avant de modifier le projet. Il contient le contexte opérationnel actuel, les contraintes de charge du NAS, la stratégie statique/live à préserver et les priorités UX de la refonte frontend.

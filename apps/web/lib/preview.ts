@@ -11,6 +11,8 @@ export type PreviewEvent = {
   city: string;
   address: string;
   countryCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type PreviewVenue = {
@@ -20,10 +22,12 @@ export type PreviewVenue = {
   city: string;
   address: string;
   countryCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   events: PreviewEvent[];
 };
 
-type PreviewData = {
+export type PreviewData = {
   generatedAt: string;
   scope: { country: string; start: string; end: string; days: number };
   count: number;
@@ -39,6 +43,8 @@ type ApiVenue = {
   address?: string | null;
   city?: string | null;
   countryCode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type ApiEvent = {
@@ -102,11 +108,13 @@ function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
     leagueId,
     city: venue.city || "",
     address: venue.address || "",
-    countryCode: venue.countryCode || "FR"
+    countryCode: venue.countryCode || "FR",
+    latitude: venue.latitude ?? null,
+    longitude: venue.longitude ?? null
   };
 }
 
-async function loadStaticUpcomingFrance(): Promise<PreviewEvent[]> {
+export async function loadUpcomingSnapshot(): Promise<PreviewData> {
   const response = await fetch(`${BASE_PATH}/data/events.json`, {
     cache: "no-store"
   });
@@ -116,7 +124,7 @@ async function loadStaticUpcomingFrance(): Promise<PreviewEvent[]> {
   }
 
   const payload = (await response.json()) as PreviewData;
-  return payload.events;
+  return payload;
 }
 
 /**
@@ -124,7 +132,7 @@ async function loadStaticUpcomingFrance(): Promise<PreviewEvent[]> {
  * This keeps high-traffic browsing off the small Synology backend.
  */
 export async function loadUpcomingFrance(): Promise<PreviewEvent[]> {
-  return loadStaticUpcomingFrance();
+  return (await loadUpcomingSnapshot()).events;
 }
 
 function pickApiVenue(items: ApiVenue[], fallback: PreviewVenue) {
@@ -206,6 +214,8 @@ export async function refreshVenueLive(fallback: PreviewVenue): Promise<PreviewV
     city: apiVenue.city || fallback.city,
     address: apiVenue.address || fallback.address,
     countryCode: apiVenue.countryCode || fallback.countryCode,
+    latitude: apiVenue.latitude ?? fallback.latitude ?? null,
+    longitude: apiVenue.longitude ?? fallback.longitude ?? null,
     events: Array.from(new Map(events.map((event) => [event.id, event])).values()).sort(
       (a, b) => a.startsAt.localeCompare(b.startsAt)
     )
@@ -230,6 +240,8 @@ export function venuesFromEvents(events: PreviewEvent[]): PreviewVenue[] {
       city: event.city,
       address: event.address,
       countryCode: event.countryCode,
+      latitude: event.latitude ?? null,
+      longitude: event.longitude ?? null,
       events: []
     };
     current.events.push(event);

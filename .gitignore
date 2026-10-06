@@ -6,6 +6,9 @@ build/
 .env.*
 !.env.example
 coverage/
+apps/web/out/
+apps/web/public/data/
+*.tsbuildinfo
 *.log
 .DS_Store
 !.env.production.example

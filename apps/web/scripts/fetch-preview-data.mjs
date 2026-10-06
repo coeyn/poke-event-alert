@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 
 const API = "https://pokedata.ovh/events/apiv2";
 const DAYS = Number(process.env.PREVIEW_DAYS ?? 30);
-const MAX_PAGES = Number(process.env.PREVIEW_MAX_PAGES ?? 15);
+const MAX_PAGES = Number(process.env.PREVIEW_MAX_PAGES ?? 40);
 
 function dateOnly(date) {
   return date.toISOString().slice(0, 10);
@@ -40,12 +40,36 @@ function normalizeGame(row) {
   return "Play!";
 }
 
+function parisOffsetMinutes(instant) {
+  const part = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Paris",
+    timeZoneName: "shortOffset"
+  }).formatToParts(new Date(instant)).find((item) => item.type === "timeZoneName")?.value ?? "GMT";
+  const match = part.match(/^GMT([+-])(\d{1,2})(?::(\d{2}))?$/);
+  if (!match) return 0;
+  return (match[1] === "+" ? 1 : -1) * (Number(match[2]) * 60 + Number(match[3] ?? 0));
+}
+
+function sourceDate(value) {
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(value)) return new Date(value);
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!match) return new Date(NaN);
+  const wallTime = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] ?? 0), Number(match[5] ?? 0), Number(match[6] ?? 0));
+  let instant = wallTime - parisOffsetMinutes(wallTime) * 60_000;
+  instant = wallTime - parisOffsetMinutes(instant) * 60_000;
+  return new Date(instant);
+}
+
 function normalize(row) {
   const id = text(row, "guid", "Guid", "id");
   const venueName = text(row, "shop", "shop_name", "venue_name");
   const leagueId = text(row, "league", "league_id") || null;
   const when = text(row, "Start_date", "when", "start_datetime", "event_date", "date");
-  const date = new Date(when.includes("T") ? when : when.replace(" ", "T"));
+  const date = sourceDate(when);
+  const rawLatitude = row.latitude ?? row.lat;
+  const rawLongitude = row.longitude ?? row.lon ?? row.lng;
+  const latitude = rawLatitude === "" || rawLatitude == null ? NaN : Number(rawLatitude);
+  const longitude = rawLongitude === "" || rawLongitude == null ? NaN : Number(rawLongitude);
 
   if (!id || !venueName || Number.isNaN(date.getTime())) return null;
 
@@ -61,7 +85,9 @@ function normalize(row) {
     leagueId,
     city: text(row, "city"),
     address: text(row, "street_address", "address"),
-    countryCode: text(row, "country_code") || "FR"
+    countryCode: text(row, "country_code") || "FR",
+    latitude: Number.isFinite(latitude) && Math.abs(latitude) <= 90 ? latitude : null,
+    longitude: Number.isFinite(longitude) && Math.abs(longitude) <= 180 ? longitude : null
   };
 }
 
@@ -94,7 +120,7 @@ do {
 
   for (const row of payload.events ?? []) {
     const item = normalize(row);
-    if (item) events.push(item);
+    if (item && item.startsAt >= now.toISOString() && item.startsAt.slice(0, 10) <= end) events.push(item);
   }
 
   page += 1;
