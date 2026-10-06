@@ -6,6 +6,7 @@ import { EventCard } from "./EventCard";
 import { Loading } from "./Loading";
 import { loadUpcomingSnapshot, readFavorites, type PreviewEvent } from "../lib/preview";
 import { isPersonalEvent, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { readBlockedVenues } from "../lib/blocked-venues";
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -14,12 +15,13 @@ function dayKey(date: Date) {
 export function HomeDashboard() {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [blockedKeys, setBlockedKeys] = useState<string[]>([]);
   const [settings, setSettings] = useState<LocalSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const refresh = () => { setFavorites(readFavorites()); setSettings(readLocalSettings()); };
+    const refresh = () => { setFavorites(readFavorites()); setBlockedKeys(readBlockedVenues().map((venue) => venue.key)); setSettings(readLocalSettings()); };
     refresh();
     loadUpcomingSnapshot().then((snapshot) => setEvents(snapshot.events)).catch(() => setError("Impossible de charger les événements pour le moment.")).finally(() => setLoading(false));
     window.addEventListener("focus", refresh);
@@ -32,9 +34,10 @@ export function HomeDashboard() {
     const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + index);
     return { key: dayKey(date), date };
   }), [today]);
-  const personalEvents = useMemo(() => settings ? events.filter((event) => isPersonalEvent(event, favorites, settings)) : [], [events, favorites, settings]);
-  const upcoming = personalEvents.length ? personalEvents : events;
-  const recentSource = personalEvents.length ? personalEvents : events;
+  const visibleEvents = useMemo(() => events.filter((event) => !blockedKeys.includes(event.venueKey)), [events, blockedKeys]);
+  const personalEvents = useMemo(() => settings ? visibleEvents.filter((event) => isPersonalEvent(event, favorites, settings)) : [], [visibleEvents, favorites, settings]);
+  const upcoming = personalEvents.length ? personalEvents : visibleEvents;
+  const recentSource = personalEvents.length ? personalEvents : visibleEvents;
   const recentCutoff = useMemo(() => dayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)), [today]);
   const recentEvents = useMemo(() => recentSource.filter((event) => event.publishedAt && event.publishedAt.slice(0, 10) >= recentCutoff).sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "")), [recentSource, recentCutoff]);
   const countByDay = useMemo(() => {

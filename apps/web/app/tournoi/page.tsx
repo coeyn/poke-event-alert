@@ -12,11 +12,13 @@ import {
 import { Loading } from "../../components/Loading";
 import { previewIcsFilename, previewIcsHref } from "../../lib/ics";
 import { syncVenueFollow } from "../../lib/follows";
+import { readBlockedVenues, setVenueBlocked } from "../../lib/blocked-venues";
 
 export default function TournamentPage() {
   const [event, setEvent] = useState<PreviewEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [followed, setFollowed] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [followError, setFollowError] = useState("");
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function TournamentPage() {
       .then((events) => {
         const found = events.find((item) => item.id === id) ?? null;
         setEvent(found);
-        if (found) setFollowed(readFavorites().includes(found.venueKey));
+        if (found) { setFollowed(readFavorites().includes(found.venueKey)); setBlocked(readBlockedVenues().some((venue) => venue.key === found.venueKey)); }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -76,6 +78,22 @@ export default function TournamentPage() {
     }
   }
 
+  async function block() {
+    if (!event) return;
+    setFollowError("");
+    const wasFollowed = followed;
+    if (wasFollowed) { toggleFavorite(event.venueKey); setFollowed(false); }
+    setVenueBlocked({ key: event.venueKey, name: event.venueName, city: event.city }, true);
+    setBlocked(true);
+    if (wasFollowed) {
+      try {
+        await syncVenueFollow({ key: event.venueKey, name: event.venueName, leagueId: event.leagueId, city: event.city, countryCode: event.countryCode }, false);
+      } catch {
+        setFollowError("Boutique masquée sur cet appareil. Le retrait des alertes n'a pas pu être synchronisé avec le serveur.");
+      }
+    }
+  }
+
   return (
     <>
       <Link className="backLink" href="/explorer/">← Retour aux événements</Link>
@@ -105,9 +123,10 @@ export default function TournamentPage() {
 
         {followError && <div className="notice error">{followError}</div>}
 
-        <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={() => void toggle()}>
+        {blocked ? <div className="blockedNotice"><p>Cette boutique est bloquée. Ses événements sont masqués des listes et du calendrier.</p><button type="button" className="secondaryButton" onClick={() => { setVenueBlocked({ key: event.venueKey, name: event.venueName, city: event.city }, false); setBlocked(false); }}>Débloquer la boutique</button></div> : <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={() => void toggle()}>
           {followed ? "★ Boutique suivie" : "☆ Suivre cette boutique"}
-        </button>
+        </button>}
+        {!blocked && <button type="button" className="blockDetailButton" onClick={() => void block()}>Bloquer cette boutique</button>}
 
         <a
           className="secondaryButton"

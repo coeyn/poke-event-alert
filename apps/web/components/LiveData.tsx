@@ -17,12 +17,14 @@ import {
   syncVenueFollow
 } from "../lib/follows";
 import { loadLiveVenueCounts } from "../lib/venue-counts";
+import { readBlockedVenues, setVenueBlocked } from "../lib/blocked-venues";
 
 type Mode = "discover" | "events" | "venues" | "favorites";
 
 export function LiveData({ mode }: { mode: Mode }) {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [blockedKeys, setBlockedKeys] = useState<string[]>([]);
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -35,13 +37,17 @@ export function LiveData({ mode }: { mode: Mode }) {
   const activeMode = mode === "discover" ? tab : mode;
 
   useEffect(() => {
-    setFavorites(readFavorites());
+    const refresh = () => { setFavorites(readFavorites()); setBlockedKeys(readBlockedVenues().map((venue) => venue.key)); };
+    refresh();
     loadUpcomingFrance()
       .then(setEvents)
       .catch(() =>
         setError("Impossible de joindre les données d'événements. Réessaie un peu plus tard.")
       )
       .finally(() => setLoading(false));
+    window.addEventListener("focus", refresh);
+    window.addEventListener("poke-settings-changed", refresh);
+    return () => { window.removeEventListener("focus", refresh); window.removeEventListener("poke-settings-changed", refresh); };
   }, []);
 
   const venues = useMemo(() => venuesFromEvents(events), [events]);
@@ -49,7 +55,7 @@ export function LiveData({ mode }: { mode: Mode }) {
   useEffect(() => {
     if (venues.length === 0) return;
     const localKeys = readFavorites();
-    void syncExistingLocalFollows(venues, localKeys);
+    void syncExistingLocalFollows(venues, localKeys.filter((key) => !readBlockedVenues().some((venue) => venue.key === key)));
   }, [venues]);
 
   const q = query.trim().toLowerCase();
@@ -58,6 +64,7 @@ export function LiveData({ mode }: { mode: Mode }) {
     () =>
       events
         .filter((event) =>
+          !blockedKeys.includes(event.venueKey) &&
           (!q || [event.title, event.venueName, event.city, event.type, event.game]
             .join(" ")
             .toLowerCase()
@@ -65,19 +72,19 @@ export function LiveData({ mode }: { mode: Mode }) {
           (eventType === "Tous" || event.type === eventType) &&
           (!followedOnly || favorites.includes(event.venueKey))
         ),
-    [events, q, eventType, followedOnly, favorites]
+    [events, q, eventType, followedOnly, favorites, blockedKeys]
   );
 
   const filteredVenues = useMemo(
     () =>
       venues.filter((venue) =>
-        !q ||
+        !blockedKeys.includes(venue.key) && (!q ||
         [venue.name, venue.city, venue.leagueId ?? ""]
           .join(" ")
           .toLowerCase()
-          .includes(q)
+          .includes(q))
       ),
-    [venues, q]
+    [venues, q, blockedKeys]
   );
 
   const favoriteVenues = useMemo(
@@ -131,6 +138,20 @@ export function LiveData({ mode }: { mode: Mode }) {
           ? syncError.message
           : "Impossible de synchroniser cette boutique avec le serveur."
       );
+    }
+  }
+
+  async function block(venue: PreviewVenue) {
+    setFollowError("");
+    const wasFollowed = favorites.includes(venue.key);
+    if (wasFollowed) setFavorites(toggleFavorite(venue.key));
+    setBlockedKeys(setVenueBlocked({ key: venue.key, name: venue.name, city: venue.city }, true).map((item) => item.key));
+    if (wasFollowed) {
+      try {
+        await syncVenueFollow(venue, false);
+      } catch {
+        setFollowError(`La boutique ${venue.name} est masquée sur cet appareil, mais le retrait des alertes n'a pas pu être synchronisé. Réessaie quand le serveur est disponible.`);
+      }
     }
   }
 
@@ -206,7 +227,7 @@ export function LiveData({ mode }: { mode: Mode }) {
                 <button className={followed ? "starButton active" : "starButton"} onClick={() => void favorite(venue)} aria-label={followed ? `Ne plus suivre ${venue.name}` : `Suivre ${venue.name}`} aria-pressed={followed}><span aria-hidden="true">★</span> {followed ? "Suivie" : "Suivre"}</button>
               </div>
               <div className="venueMeta">{venue.leagueId && <span className="leagueId">League #{venue.leagueId}</span>}<span className="venueEvents"><strong>{eventCount}</strong> événement{eventCount > 1 ? "s" : ""} à venir</span></div>
-              <div className="venueFoot">{venue.events[0] ? <span>Prochain · {venue.events[0].type} le {formatShort(venue.events[0].startsAt)}</span> : <span>Événements à venir</span>}<Link className="venueDetailLink" href={`/boutique/?key=${encodeURIComponent(venue.key)}`}>Voir la boutique <span aria-hidden="true">→</span></Link></div>
+              <div className="venueFoot">{venue.events[0] ? <span>Prochain · {venue.events[0].type} le {formatShort(venue.events[0].startsAt)}</span> : <span>Événements à venir</span>}<div className="venueFootActions"><button type="button" className="blockVenueButton" onClick={() => void block(venue)} aria-label={`Bloquer ${venue.name}`}>Bloquer</button><Link className="venueDetailLink" href={`/boutique/?key=${encodeURIComponent(venue.key)}`}>Voir la boutique <span aria-hidden="true">→</span></Link></div></div>
             </article>
           );
         })}

@@ -13,9 +13,11 @@ import {
   sendPushTest
 } from "../../lib/push";
 import { DEFAULT_SETTINGS, readLocalSettings, saveLocalSettings, type LocalSettings } from "../../lib/local-settings";
+import { readBlockedVenues, setVenueBlocked, type BlockedVenue } from "../../lib/blocked-venues";
 
 export default function ReglagesPage() {
   const [settings, setSettings] = useState<LocalSettings>(DEFAULT_SETTINGS);
+  const [blockedVenues, setBlockedVenues] = useState<BlockedVenue[]>([]);
   const [saved, setSaved] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [pushSupported, setPushSupported] = useState(true);
@@ -27,6 +29,7 @@ export default function ReglagesPage() {
 
   useEffect(() => {
     setSettings(readLocalSettings());
+    setBlockedVenues(readBlockedVenues());
 
     pushStatus()
       .then((status) => {
@@ -134,7 +137,7 @@ export default function ReglagesPage() {
 
   return (
     <>
-      <header className="workspaceHead"><div><span className="eyebrow">Personnalisation</span><h1>Réglages</h1></div></header>
+      <header className="workspaceHead"><h1>Réglages</h1></header>
 
       <section className="settingsCard">
         <h2>Découvrir autour de moi</h2>
@@ -152,6 +155,12 @@ export default function ReglagesPage() {
         <Setting label="League Cup" checked={settings.cup} onChange={() => toggle("cup")} />
         <Setting label="Avant-premières" checked={settings.prerelease} onChange={() => toggle("prerelease")} />
         <Setting label="Autres événements Play!" checked={settings.other} onChange={() => toggle("other")} />
+      </section>
+
+      <section className="settingsCard">
+        <h2>Boutiques bloquées</h2>
+        <p className="settingHint">Leurs événements n’apparaissent plus dans l’accueil, la recherche ni le calendrier. Cette liste est enregistrée sur cet appareil.</p>
+        {blockedVenues.length ? <div className="blockedVenueList">{blockedVenues.map((venue) => <div className="blockedVenueRow" key={venue.key}><span><strong>{venue.name}</strong><small>{venue.city || "France"}</small></span><button type="button" className="secondaryButton" onClick={() => setBlockedVenues(setVenueBlocked(venue, false))} aria-label={`Débloquer ${venue.name}`}>Débloquer</button></div>)}</div> : <p className="settingHint">Aucune boutique bloquée.</p>}
       </section>
 
       <section className="settingsCard mutedCard">

@@ -6,6 +6,7 @@ import { EventCard } from "./EventCard";
 import { Loading } from "./Loading";
 import { loadUpcomingSnapshot, readFavorites, type PreviewEvent } from "../lib/preview";
 import { isPersonalEvent, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { readBlockedVenues } from "../lib/blocked-venues";
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -18,6 +19,7 @@ function eventDay(event: PreviewEvent) {
 export function CalendarView() {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [blockedKeys, setBlockedKeys] = useState<string[]>([]);
   const [settings, setSettings] = useState<LocalSettings | null>(null);
   const [selectedDay, setSelectedDay] = useState(dayKey(new Date()));
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -27,6 +29,7 @@ export function CalendarView() {
 
   useEffect(() => {
     setFavorites(readFavorites());
+    setBlockedKeys(readBlockedVenues().map((venue) => venue.key));
     setSettings(readLocalSettings());
     const requestedDay = new URLSearchParams(window.location.search).get("day");
     if (requestedDay && /^\d{4}-\d{2}-\d{2}$/.test(requestedDay)) {
@@ -34,7 +37,7 @@ export function CalendarView() {
       if (!Number.isNaN(requestedDate.getTime())) { setSelectedDay(requestedDay); setMonth(new Date(requestedDate.getFullYear(), requestedDate.getMonth(), 1)); }
     }
     loadUpcomingSnapshot().then((snapshot) => { setEvents(snapshot.events); setScope(snapshot.scope); }).catch(() => setError("Le calendrier est momentanément indisponible.")).finally(() => setLoading(false));
-    const refresh = () => { setFavorites(readFavorites()); setSettings(readLocalSettings()); };
+    const refresh = () => { setFavorites(readFavorites()); setBlockedKeys(readBlockedVenues().map((venue) => venue.key)); setSettings(readLocalSettings()); };
     window.addEventListener("focus", refresh);
     window.addEventListener("poke-settings-changed", refresh);
     return () => {
@@ -43,7 +46,7 @@ export function CalendarView() {
     };
   }, []);
 
-  const visible = useMemo(() => settings ? events.filter((event) => isPersonalEvent(event, favorites, settings)) : [], [events, favorites, settings]);
+  const visible = useMemo(() => settings ? events.filter((event) => !blockedKeys.includes(event.venueKey) && isPersonalEvent(event, favorites, settings)) : [], [events, favorites, settings, blockedKeys]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, PreviewEvent[]>();
