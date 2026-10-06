@@ -9,7 +9,7 @@ on:
       - ".github/workflows/pages.yml"
       - "package.json"
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "7,37 * * * *"
   workflow_dispatch:
 
 permissions:
