@@ -25,6 +25,68 @@ function configureWebPush() {
   webpush.setVapidDetails(subject, publicKey, privateKey);
 }
 
+async function getSubscriptions(pool: Pool, userId: string) {
+  return pool.query<{
+    id: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  }>(
+    `
+      SELECT id, endpoint, p256dh, auth
+      FROM push_subscriptions
+      WHERE user_id = $1::uuid
+    `,
+    [userId]
+  );
+}
+
+async function deliver(
+  pool: Pool,
+  subscription: {
+    id: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  },
+  payload: string
+) {
+  try {
+    await webpush.sendNotification(
+      {
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: subscription.p256dh,
+          auth: subscription.auth
+        }
+      },
+      payload
+    );
+
+    await pool.query(
+      `
+        UPDATE push_subscriptions
+        SET last_success_at = now()
+        WHERE id = $1::uuid
+      `,
+      [subscription.id]
+    );
+
+    return true;
+  } catch (error) {
+    const statusCode = (error as { statusCode?: number }).statusCode;
+
+    if (statusCode === 404 || statusCode === 410) {
+      await pool.query(
+        "DELETE FROM push_subscriptions WHERE id = $1::uuid",
+        [subscription.id]
+      );
+    }
+
+    return false;
+  }
+}
+
 export async function sendPendingNotifications(pool: Pool, limit = 100) {
   configureWebPush();
 
@@ -52,22 +114,7 @@ export async function sendPendingNotifications(pool: Pool, limit = 100) {
   let failed = 0;
 
   for (const item of pending.rows) {
-    const subscriptions = await pool.query<{
-      id: string;
-      endpoint: string;
-      p256dh: string;
-      auth: string;
-    }>(
-      `
-        SELECT id, endpoint, p256dh, auth
-        FROM push_subscriptions
-        WHERE user_id = $1::uuid
-      `,
-      [item.user_id]
-    );
-
-    let delivered = false;
-    let transientFailure = false;
+    const subscriptions = await getSubscriptions(pool, item.user_id);
 
     const webBase =
       process.env.PUBLIC_WEB_URL?.replace(/\/$/, "") ??
@@ -92,43 +139,12 @@ export async function sendPendingNotifications(pool: Pool, limit = 100) {
       tag: `${item.kind}:${item.source_event_id}`
     });
 
+    let delivered = false;
     for (const subscription of subscriptions.rows) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: subscription.p256dh,
-              auth: subscription.auth
-            }
-          },
-          payload
-        );
-
-        delivered = true;
-        await pool.query(
-          `
-            UPDATE push_subscriptions
-            SET last_success_at = now()
-            WHERE id = $1::uuid
-          `,
-          [subscription.id]
-        );
-      } catch (error) {
-        const statusCode = (error as { statusCode?: number }).statusCode;
-
-        if (statusCode === 404 || statusCode === 410) {
-          await pool.query(
-            "DELETE FROM push_subscriptions WHERE id = $1::uuid",
-            [subscription.id]
-          );
-        } else {
-          transientFailure = true;
-        }
-      }
+      if (await deliver(pool, subscription, payload)) delivered = true;
     }
 
-    if (delivered || (!transientFailure && subscriptions.rowCount === 0)) {
+    if (delivered || subscriptions.rowCount === 0) {
       await pool.query(
         "UPDATE notifications SET sent_at = now() WHERE id = $1::uuid",
         [item.notification_id]
@@ -141,6 +157,36 @@ export async function sendPendingNotifications(pool: Pool, limit = 100) {
 
   return {
     processed: pending.rowCount ?? 0,
+    sent,
+    failed
+  };
+}
+
+export async function sendTestNotification(pool: Pool, userId: string) {
+  configureWebPush();
+
+  const subscriptions = await getSubscriptions(pool, userId);
+  const webBase =
+    process.env.PUBLIC_WEB_URL?.replace(/\/$/, "") ??
+    "https://coeyn.github.io/poke-event-alert";
+
+  const payload = JSON.stringify({
+    title: "Test Poké Event Alert ✅",
+    body: "Les notifications fonctionnent correctement sur cet appareil.",
+    url: `${webBase}/reglages/`,
+    tag: `push-test:${userId}`
+  });
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const subscription of subscriptions.rows) {
+    if (await deliver(pool, subscription, payload)) sent += 1;
+    else failed += 1;
+  }
+
+  return {
+    subscriptions: subscriptions.rowCount ?? 0,
     sent,
     failed
   };

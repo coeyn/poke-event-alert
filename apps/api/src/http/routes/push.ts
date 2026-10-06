@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Pool } from "pg";
+import { sendTestNotification } from "../../notifications/sender.js";
 import { stringParam } from "../utils.js";
 
 export function registerPushRoutes(app: FastifyInstance, pool: Pool) {
@@ -57,5 +58,43 @@ export function registerPushRoutes(app: FastifyInstance, pool: Pool) {
     }
 
     return { subscribed: false };
+  });
+
+  app.post("/users/:userId/push-test", async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+
+    const recent = await pool.query(
+      `
+        SELECT 1
+        FROM push_subscriptions
+        WHERE
+          user_id = $1::uuid
+          AND last_success_at > now() - INTERVAL '10 seconds'
+        LIMIT 1
+      `,
+      [userId]
+    );
+
+    if ((recent.rowCount ?? 0) > 0) {
+      return reply.code(429).send({
+        error: "Attends quelques secondes avant de renvoyer un test."
+      });
+    }
+
+    const result = await sendTestNotification(pool, userId);
+
+    if (result.subscriptions === 0) {
+      return reply.code(409).send({
+        error: "Aucun abonnement Push enregistré pour cet utilisateur."
+      });
+    }
+
+    if (result.sent === 0) {
+      return reply.code(502).send({
+        error: "La notification de test n'a pas pu être envoyée."
+      });
+    }
+
+    return { ok: true, ...result };
   });
 }

@@ -9,8 +9,13 @@ import {
   readFavorites,
   toggleFavorite,
   venuesFromEvents,
-  type PreviewEvent
+  type PreviewEvent,
+  type PreviewVenue
 } from "../lib/preview";
+import {
+  syncExistingLocalFollows,
+  syncVenueFollow
+} from "../lib/follows";
 
 type Mode = "events" | "venues" | "favorites";
 
@@ -19,6 +24,7 @@ export function LiveData({ mode }: { mode: Mode }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
+  const [followError, setFollowError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +38,13 @@ export function LiveData({ mode }: { mode: Mode }) {
   }, []);
 
   const venues = useMemo(() => venuesFromEvents(events), [events]);
+
+  useEffect(() => {
+    if (venues.length === 0) return;
+    const localKeys = readFavorites();
+    void syncExistingLocalFollows(venues, localKeys);
+  }, [venues]);
+
   const q = query.trim().toLowerCase();
 
   const filteredEvents = useMemo(
@@ -62,8 +75,21 @@ export function LiveData({ mode }: { mode: Mode }) {
 
   const favoriteVenues = filteredVenues.filter((venue) => favorites.includes(venue.key));
 
-  function favorite(key: string) {
-    setFavorites(toggleFavorite(key));
+  async function favorite(venue: PreviewVenue) {
+    setFollowError("");
+    const wasFollowed = favorites.includes(venue.key);
+    setFavorites(toggleFavorite(venue.key));
+
+    try {
+      await syncVenueFollow(venue, !wasFollowed);
+    } catch (syncError) {
+      setFavorites(toggleFavorite(venue.key));
+      setFollowError(
+        syncError instanceof Error
+          ? syncError.message
+          : "Impossible de synchroniser cette boutique avec le serveur."
+      );
+    }
   }
 
   if (loading) return <Loading />;
@@ -98,6 +124,8 @@ export function LiveData({ mode }: { mode: Mode }) {
         </div>
       )}
 
+      {followError && <div className="notice error">{followError}</div>}
+
       <div className="sectionHead">
         <h2>{mode === "favorites" ? "Mes boutiques" : "Boutiques avec des events"}</h2>
         <span>{list.length}</span>
@@ -123,7 +151,7 @@ export function LiveData({ mode }: { mode: Mode }) {
                 </div>
                 <button
                   className={followed ? "starButton active" : "starButton"}
-                  onClick={() => favorite(venue.key)}
+                  onClick={() => void favorite(venue)}
                   aria-label={followed ? "Ne plus suivre" : "Suivre"}
                 >
                   ★
