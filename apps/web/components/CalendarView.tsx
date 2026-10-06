@@ -63,6 +63,9 @@ export function CalendarView() {
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) => index < firstWeekday ? null : index - firstWeekday + 1);
   const dayEvents = byDay.get(selectedDay) ?? [];
+  const monthDaysWithEvents = useMemo(() => [...byDay.entries()]
+    .filter(([key]) => key.startsWith(`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`))
+    .sort(([a], [b]) => a.localeCompare(b)), [byDay, month]);
   const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(month);
   const monthCount = visible.filter((event) => { const date = new Date(event.startsAt); return date.getFullYear() === month.getFullYear() && date.getMonth() === month.getMonth(); }).length;
   const firstMonth = scope ? new Date(`${scope.start}T12:00:00`) : month;
@@ -100,6 +103,17 @@ export function CalendarView() {
         const unavailable = Boolean(scope && (key < scope.start || key > scope.end));
         return <button key={key} type="button" disabled={unavailable} className={`calendarDay${selectedDay === key ? " selected" : ""}${key === dayKey(new Date()) ? " today" : ""}`} onClick={() => setSelectedDay(key)} aria-label={`${day} ${monthLabel}${unavailable ? ", hors période" : `, ${matches.length} événement${matches.length > 1 ? "s" : ""}${matches.length ? ` : ${eventCategorySummary(matches)}` : ""}`}`} aria-pressed={selectedDay === key}><span className="calendarDayTop"><span>{day}</span>{matches.length > 0 && <b>{matches.length}</b>}</span><CalendarTypeBadges events={matches} /></button>;
       })}</div>
+      <div className="calendarAgenda" aria-label={`Jours avec événements en ${monthLabel}`}>
+        {monthDaysWithEvents.length ? monthDaysWithEvents.map(([key, matches]) => {
+          const date = new Date(`${key}T12:00:00`);
+          const active = selectedDay === key;
+          return <button key={key} type="button" className={`calendarAgendaRow${active ? " selected" : ""}`} onClick={() => setSelectedDay(key)} aria-pressed={active} aria-label={`${new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(date)} : ${eventCategorySummary(matches)}`}>
+            <span className="calendarAgendaDate"><strong>{date.getDate()}</strong><small>{new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(date)}</small></span>
+            <span className="calendarAgendaDetails"><strong>{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(date)}</strong><CalendarTypeBadges events={matches} expanded /></span>
+            <span className="calendarAgendaTotal">{matches.length}</span>
+          </button>;
+        }) : <p className="calendarAgendaEmpty">Aucun événement dans ton calendrier ce mois-ci.</p>}
+      </div>
     </section>
     {scope && <p className="calendarScope">Événements publiés du {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(firstMonth)} au {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(lastMonth)}.</p>}
     <div className="sectionHead calendarEventsHead"><h2>{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${selectedDay}T12:00:00`))}</h2><span>{dayEvents.length} événement{dayEvents.length > 1 ? "s" : ""}</span></div>

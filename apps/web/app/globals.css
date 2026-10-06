@@ -182,6 +182,20 @@ button:disabled { cursor: not-allowed; }
 .calendarSelectedTypes { margin: -2px 0 14px; }
 .calendarTypeBadges.expanded { justify-content: flex-start; gap: 7px; }
 .calendarTypeBadges.expanded .calendarTypeBadge { gap: 6px; min-height: 28px; padding: 5px 9px; border-radius: 6px; font-size: 11px; }
+.calendarAgenda { display: none; }
+.calendarAgendaRow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 68px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); text-align: left; }
+.calendarAgendaRow + .calendarAgendaRow { margin-top: 7px; }
+.calendarAgendaRow.selected { border-color: var(--accent); background: var(--accent-soft); }
+.calendarAgendaDate { display: flex; width: 42px; flex: 0 0 42px; flex-direction: column; align-items: center; gap: 1px; }
+.calendarAgendaDate strong { font-size: 22px; line-height: 1; }
+.calendarAgendaDate small { color: var(--muted); font-size: 10px; font-weight: 750; text-transform: uppercase; }
+.calendarAgendaDetails { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 6px; }
+.calendarAgendaDetails > strong { font-size: 12px; text-transform: capitalize; }
+.calendarAgendaDetails .calendarTypeBadges.expanded { gap: 5px; }
+.calendarAgendaDetails .calendarTypeBadges.expanded .calendarTypeBadge { min-height: 23px; padding: 4px 7px; font-size: 10px; }
+.calendarAgendaTotal { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; border-radius: 50%; background: #eef1ef; color: #53635a; font-size: 11px; font-weight: 800; }
+.calendarAgendaRow.selected .calendarAgendaTotal { background: #fff; color: #b83e44; }
+.calendarAgendaEmpty { margin: 0; padding: 18px 12px; color: var(--muted); font-size: 13px; text-align: center; }
 .calendarGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .weekdayRow { margin-bottom: 7px; color: #9aa69e; font-size: 10px; font-weight: 800; text-align: center; text-transform: uppercase; }
 .calendarDay { display: flex; flex-direction: column; align-items: stretch; gap: 5px; min-height: 68px; padding: 7px 5px; border: 1px solid transparent; border-radius: 6px; background: #f6f8f6; color: #4a5d4e; font-size: 13px; font-weight: 750; }
@@ -277,6 +291,8 @@ button:disabled { cursor: not-allowed; }
   .calendarDay { min-height: 76px; padding: 5px 2px; gap: 4px; }
   .calendarTypeBadge { padding: 2px 3px; font-size: 9px; }
   .calendarTypeLegend { gap: 5px 10px; margin-bottom: 14px; font-size: 10px; }
+  .calendarTypeLegend, .weekdayRow, .daysGrid, .calendarSelectedTypes { display: none; }
+  .calendarAgenda { display: block; }
   .calendarToolbar h2 { font-size: 19px; }
   .detailGrid { grid-template-columns: 1fr; }
   .navItem { font-size: 9px; }
