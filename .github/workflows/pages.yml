@@ -44,7 +44,7 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_BASE_PATH: "/poke-event-alert"
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://nasmaine22.synology.me:8443' }}
         run: npm run --workspace @poke-event-alert/web build
 
       - name: Configure GitHub Pages
