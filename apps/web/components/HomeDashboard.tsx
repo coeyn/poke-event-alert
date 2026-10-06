@@ -7,6 +7,7 @@ import { Loading } from "./Loading";
 import { loadUpcomingSnapshot, readFavorites, type PreviewEvent } from "../lib/preview";
 import { isPersonalEvent, readLocalSettings, type LocalSettings } from "../lib/local-settings";
 import { readBlockedVenues } from "../lib/blocked-venues";
+import { EventTypeMark } from "./EventTypeMark";
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -74,7 +75,7 @@ export function HomeDashboard() {
       <aside className="homeSecondary">
         <section className="homeSection">
           <div className="sectionHead"><h2>Ajoutés récemment</h2><span>{personalEvents.length ? "Pour toi · 7 jours" : "France · 7 jours"}</span></div>
-          {recentEvents.length ? <div className="recentList">{recentEvents.slice(0, 5).map((event) => <Link key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}><span className="recentType">{event.type}</span><strong>{event.title === "Événement Play! Pokémon" ? `${event.type} · ${event.venueName}` : event.title}</strong><small>{event.city || event.venueName} · le {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${event.publishedAt?.slice(0, 10)}T12:00:00`))}</small></Link>)}</div> : <div className="emptyState"><h3>Aucune annonce récente</h3><p>Les nouvelles publications apparaîtront ici.</p></div>}
+          {recentEvents.length ? <div className="recentList">{recentEvents.slice(0, 5).map((event) => <Link key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}><EventTypeMark type={event.type} size="small" /><span className="recentBody"><span className="recentType">{event.type}</span><strong>{event.title === "Événement Play! Pokémon" ? event.venueName : event.title}</strong><small>{event.city || event.venueName} · le {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${event.publishedAt?.slice(0, 10)}T12:00:00`))}</small></span></Link>)}</div> : <div className="emptyState"><h3>Aucune annonce récente</h3><p>Les nouvelles publications apparaîtront ici.</p></div>}
         </section>
       </aside>
     </div>

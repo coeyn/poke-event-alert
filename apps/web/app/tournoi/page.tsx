@@ -13,6 +13,7 @@ import { Loading } from "../../components/Loading";
 import { previewIcsFilename, previewIcsHref } from "../../lib/ics";
 import { syncVenueFollow } from "../../lib/follows";
 import { readBlockedVenues, setVenueBlocked } from "../../lib/blocked-venues";
+import { EventTypeMark } from "../../components/EventTypeMark";
 
 export default function TournamentPage() {
   const [event, setEvent] = useState<PreviewEvent | null>(null);
@@ -99,12 +100,12 @@ export default function TournamentPage() {
       <Link className="backLink" href="/explorer/">← Retour aux événements</Link>
 
       <section className="detailCard">
+        <div className="eventDetailVisual"><EventTypeMark type={event.type} size="large" /><span>{event.type}</span></div>
         <div className="chips">
           <span className="chip">{event.game}</span>
-          <span className="chip soft">{event.type}</span>
         </div>
 
-        <h1>{event.title}</h1>
+        <h1>{event.title === "Événement Play! Pokémon" ? event.venueName : event.title}</h1>
         <p className="detailDate">{formatDate(event.startsAt)}</p>
 
         <div className="detailGrid">

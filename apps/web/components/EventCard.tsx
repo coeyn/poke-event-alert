@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { type PreviewEvent } from "../lib/preview";
+import { EventTypeMark } from "./EventTypeMark";
 
 export function EventCard({ event }: { event: PreviewEvent }) {
   const date = new Date(event.startsAt);
@@ -11,12 +12,13 @@ export function EventCard({ event }: { event: PreviewEvent }) {
         <span>{new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(date)}</span>
         <b>{date.getDate()}</b>
       </div>
+      <EventTypeMark type={event.type} />
       <div className="eventBody">
         <div className="chips">
           <span className="chip typeChip">{event.type}</span>
           <span className="chip soft">{event.game}</span>
         </div>
-        <h3>{genericTitle ? `${event.type} · ${event.venueName}` : event.title}</h3>
+        <h3>{genericTitle ? event.venueName : event.title}</h3>
         <p className="meta">{!genericTitle && <><span className="venueName">{event.venueName}</span><span aria-hidden="true">·</span></>}{event.city || event.address || "France"}<span aria-hidden="true">·</span><strong>{time}</strong></p>
       </div>
       <span className="arrowLink" aria-hidden="true">↗</span>
