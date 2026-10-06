@@ -32,7 +32,7 @@ export function LiveData({ mode }: { mode: Mode }) {
     loadUpcomingFrance()
       .then(setEvents)
       .catch(() =>
-        setError("Impossible de joindre la source d'événements depuis cette preview. Réessaie un peu plus tard.")
+        setError("Impossible de joindre les données d'événements. Réessaie un peu plus tard.")
       )
       .finally(() => setLoading(false));
   }, []);
@@ -163,7 +163,7 @@ export function LiveData({ mode }: { mode: Mode }) {
               </Link>
               <div className="venueEvents">
                 <strong>{venue.events.length}</strong>
-                <span> événement{venue.events.length > 1 ? "s" : ""} dans les 30 prochains jours</span>
+                <span> événement{venue.events.length > 1 ? "s" : ""} à venir</span>
               </div>
               <div className="miniEvents">
                 {venue.events.slice(0, 3).map((event) => (
