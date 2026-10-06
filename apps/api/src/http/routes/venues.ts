@@ -17,6 +17,12 @@ const VENUE_FIELDS = `
   v.source_url
 `;
 
+function optionalText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
 export function registerVenueRoutes(app: FastifyInstance, pool: Pool) {
   app.get("/venues", async (request) => {
     const query = (request.query ?? {}) as Record<string, unknown>;
@@ -65,6 +71,76 @@ export function registerVenueRoutes(app: FastifyInstance, pool: Pool) {
         total,
         hasMore: offset + result.rows.length < total
       }
+    };
+  });
+
+  app.post("/venues/counts", async (request, reply) => {
+    const body = (request.body ?? {}) as { venues?: unknown };
+    if (!Array.isArray(body.venues)) {
+      return reply.code(400).send({ error: "venues must be an array" });
+    }
+    if (body.venues.length > 100) {
+      return reply.code(400).send({ error: "A maximum of 100 venues can be requested" });
+    }
+
+    const requested = body.venues
+      .map((item) => {
+        const row = (item ?? {}) as Record<string, unknown>;
+        return {
+          key: optionalText(row.key),
+          league_id: optionalText(row.leagueId),
+          name: optionalText(row.name),
+          city: optionalText(row.city)
+        };
+      })
+      .filter((item) => item.key && (item.league_id || item.name));
+
+    if (requested.length === 0) return { counts: [] };
+
+    const result = await pool.query(
+      `
+        WITH requested AS (
+          SELECT *
+          FROM jsonb_to_recordset($1::jsonb)
+            AS r(key text, league_id text, name text, city text)
+        )
+        SELECT
+          r.key,
+          COUNT(DISTINCT e.id)::int AS upcoming_event_count
+        FROM requested AS r
+        LEFT JOIN venues AS v ON (
+          (
+            r.league_id IS NOT NULL
+            AND r.league_id <> ''
+            AND v.league_id = r.league_id
+          )
+          OR (
+            (r.league_id IS NULL OR r.league_id = '')
+            AND r.name IS NOT NULL
+            AND LOWER(v.name) = LOWER(r.name)
+            AND (
+              r.city IS NULL
+              OR r.city = ''
+              OR LOWER(COALESCE(v.city, '')) = LOWER(r.city)
+            )
+          )
+        )
+        LEFT JOIN events AS e ON (
+          e.venue_id = v.id
+          AND e.status = 'active'
+          AND e.starts_at >= now()
+        )
+        GROUP BY r.key
+        ORDER BY r.key
+      `,
+      [JSON.stringify(requested)]
+    );
+
+    return {
+      counts: result.rows.map((row) => ({
+        key: String(row.key),
+        count: Number(row.upcoming_event_count ?? 0)
+      }))
     };
   });
 

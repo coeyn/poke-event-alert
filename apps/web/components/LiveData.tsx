@@ -16,12 +16,14 @@ import {
   syncExistingLocalFollows,
   syncVenueFollow
 } from "../lib/follows";
+import { loadLiveVenueCounts } from "../lib/venue-counts";
 
 type Mode = "events" | "venues" | "favorites";
 
 export function LiveData({ mode }: { mode: Mode }) {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [followError, setFollowError] = useState("");
@@ -73,7 +75,42 @@ export function LiveData({ mode }: { mode: Mode }) {
     [venues, q]
   );
 
-  const favoriteVenues = filteredVenues.filter((venue) => favorites.includes(venue.key));
+  const favoriteVenues = useMemo(
+    () => filteredVenues.filter((venue) => favorites.includes(venue.key)),
+    [filteredVenues, favorites]
+  );
+
+  useEffect(() => {
+    if (mode === "events" || venues.length === 0) return;
+
+    const targets =
+      mode === "favorites"
+        ? favoriteVenues.slice(0, 100)
+        : q
+          ? filteredVenues.slice(0, 100)
+          : [];
+
+    if (targets.length === 0) return;
+
+    let cancelled = false;
+    const delay = mode === "venues" ? 300 : 0;
+    const timer = window.setTimeout(() => {
+      void loadLiveVenueCounts(targets)
+        .then((counts) => {
+          if (!cancelled) {
+            setLiveCounts((current) => ({ ...current, ...counts }));
+          }
+        })
+        .catch(() => {
+          // Keep the CDN snapshot counts when the NAS/API is unavailable.
+        });
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [mode, q, venues.length, filteredVenues, favoriteVenues]);
 
   async function favorite(venue: PreviewVenue) {
     setFollowError("");
@@ -142,6 +179,7 @@ export function LiveData({ mode }: { mode: Mode }) {
       <div className="venueGrid">
         {list.map((venue) => {
           const followed = favorites.includes(venue.key);
+          const eventCount = liveCounts[venue.key] ?? venue.events.length;
           return (
             <article className="venueCard" key={venue.key}>
               <div className="venueTop">
@@ -162,8 +200,8 @@ export function LiveData({ mode }: { mode: Mode }) {
                 Voir la boutique →
               </Link>
               <div className="venueEvents">
-                <strong>{venue.events.length}</strong>
-                <span> événement{venue.events.length > 1 ? "s" : ""} à venir</span>
+                <strong>{eventCount}</strong>
+                <span> événement{eventCount > 1 ? "s" : ""} à venir</span>
               </div>
               <div className="miniEvents">
                 {venue.events.slice(0, 3).map((event) => (
