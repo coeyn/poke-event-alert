@@ -11,11 +11,13 @@ import {
 } from "../../lib/preview";
 import { Loading } from "../../components/Loading";
 import { previewIcsFilename, previewIcsHref } from "../../lib/ics";
+import { syncVenueFollow } from "../../lib/follows";
 
 export default function TournamentPage() {
   const [event, setEvent] = useState<PreviewEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [followed, setFollowed] = useState(false);
+  const [followError, setFollowError] = useState("");
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id");
@@ -46,9 +48,32 @@ export default function TournamentPage() {
     );
   }
 
-  function toggle() {
-    const favorites = toggleFavorite(event!.venueKey);
-    setFollowed(favorites.includes(event!.venueKey));
+  async function toggle() {
+    setFollowError("");
+    const nextFavorites = toggleFavorite(event!.venueKey);
+    const nextFollowed = nextFavorites.includes(event!.venueKey);
+    setFollowed(nextFollowed);
+
+    try {
+      await syncVenueFollow(
+        {
+          key: event!.venueKey,
+          name: event!.venueName,
+          leagueId: event!.leagueId,
+          city: event!.city,
+          countryCode: event!.countryCode
+        },
+        nextFollowed
+      );
+    } catch (error) {
+      const rolledBack = toggleFavorite(event!.venueKey);
+      setFollowed(rolledBack.includes(event!.venueKey));
+      setFollowError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de synchroniser la boutique avec le serveur."
+      );
+    }
   }
 
   return (
@@ -78,7 +103,9 @@ export default function TournamentPage() {
           </div>
         </div>
 
-        <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={toggle}>
+        {followError && <div className="notice error">{followError}</div>}
+
+        <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={() => void toggle()}>
           {followed ? "★ Boutique suivie" : "☆ Suivre cette boutique"}
         </button>
 
