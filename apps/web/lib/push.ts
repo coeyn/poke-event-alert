@@ -119,3 +119,33 @@ export async function disablePushNotifications() {
 
   await subscription.unsubscribe();
 }
+
+export async function sendPushTest() {
+  if (!PUBLIC_API_CONFIGURED) {
+    throw new Error("Le backend public n'est pas configuré.");
+  }
+
+  const userId = await getOrCreateUserId();
+  const response = await fetch(
+    `${API_BASE_URL}/users/${encodeURIComponent(userId)}/push-test`,
+    { method: "POST" }
+  );
+
+  if (!response.ok) {
+    let message = `Erreur Push (${response.status})`;
+    try {
+      const payload = (await response.json()) as { error?: string };
+      if (payload.error) message = payload.error;
+    } catch {
+      // Ignore malformed payloads.
+    }
+    throw new Error(message);
+  }
+
+  return (await response.json()) as {
+    ok: true;
+    subscriptions: number;
+    sent: number;
+    failed: number;
+  };
+}
