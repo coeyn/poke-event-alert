@@ -11,11 +11,13 @@ import {
   venuesFromEvents,
   type PreviewVenue
 } from "../../lib/preview";
+import { syncVenueFollow } from "../../lib/follows";
 
 export default function BoutiquePage() {
   const [venue, setVenue] = useState<PreviewVenue | null>(null);
   const [loading, setLoading] = useState(true);
   const [followed, setFollowed] = useState(false);
+  const [followError, setFollowError] = useState("");
 
   useEffect(() => {
     const key = new URLSearchParams(window.location.search).get("key");
@@ -46,9 +48,23 @@ export default function BoutiquePage() {
     );
   }
 
-  function toggle() {
-    const favorites = toggleFavorite(venue!.key);
-    setFollowed(favorites.includes(venue!.key));
+  async function toggle() {
+    setFollowError("");
+    const nextFavorites = toggleFavorite(venue!.key);
+    const nextFollowed = nextFavorites.includes(venue!.key);
+    setFollowed(nextFollowed);
+
+    try {
+      await syncVenueFollow(venue!, nextFollowed);
+    } catch (error) {
+      const rolledBack = toggleFavorite(venue!.key);
+      setFollowed(rolledBack.includes(venue!.key));
+      setFollowError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de synchroniser la boutique avec le serveur."
+      );
+    }
   }
 
   return (
@@ -71,7 +87,9 @@ export default function BoutiquePage() {
           </div>
         </div>
 
-        <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={toggle}>
+        {followError && <div className="notice error">{followError}</div>}
+
+        <button className={followed ? "primaryButton followedButton" : "primaryButton"} onClick={() => void toggle()}>
           {followed ? "★ Boutique suivie" : "☆ Suivre cette boutique"}
         </button>
       </section>
