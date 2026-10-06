@@ -73,9 +73,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 const LIVE_VENUE_CACHE_MS = 60_000;
 const liveVenueCache = new Map<string, { expiresAt: number; venue: PreviewVenue }>();
 
-function displayType(value: string | null | undefined) {
+function displayType(value: string | null | undefined, title = "") {
   const raw = value?.trim() ?? "";
   const type = raw.toLowerCase();
+  const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(name)) return "Friendly";
   if (type.includes("challenge")) return "Challenge";
   if (type.includes("cup")) return "Cup";
   if (type.includes("pre") && type.includes("release")) return "Avant-première";
@@ -100,7 +102,7 @@ function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
   return {
     id: event.sourceEventId,
     title: event.title || "Événement Play! Pokémon",
-    type: displayType(event.eventType),
+    type: displayType(event.eventType, event.title),
     game: event.game || "Play!",
     startsAt: event.startsAt,
     publishedAt: null,
@@ -134,7 +136,10 @@ export async function loadUpcomingSnapshot(): Promise<PreviewData> {
  * This keeps high-traffic browsing off the small Synology backend.
  */
 export async function loadUpcomingFrance(): Promise<PreviewEvent[]> {
-  return (await loadUpcomingSnapshot()).events;
+  return (await loadUpcomingSnapshot()).events.map((event) => ({
+    ...event,
+    type: displayType(event.type, event.title)
+  }));
 }
 
 function pickApiVenue(items: ApiVenue[], fallback: PreviewVenue) {

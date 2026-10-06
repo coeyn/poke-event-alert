@@ -70,6 +70,9 @@ button:disabled { cursor: not-allowed; }
 .eventDate b { font-size: 27px; line-height: 1.05; letter-spacing: -.05em; }
 .eventTypeMark { position: relative; display: grid; place-items: center; width: 52px; height: 52px; flex: 0 0 auto; border-radius: 12px; }
 .eventTypeMark.official { overflow: hidden; border: 1px solid var(--line); background: #fff; }
+.eventTypeMark.friendlyMark { border: 1px solid #f0d5e1; background: #fff2f7; color: #a13e6d; }
+.eventTypeMark.friendlyMark svg { width: 62%; height: 62%; }
+.eventTypeMark.friendlyMark.small svg { width: 66%; height: 66%; }
 .eventTypeMark img { position: absolute; left: 50%; top: 50%; width: 94%; height: 94%; object-fit: contain; transform: translate(-50%, -50%); }
 .eventTypeMark.vgc img { width: 165%; height: 130%; max-width: none; }
 .eventTypeMark.small { width: 38px; height: 38px; border-radius: 9px; }
@@ -171,6 +174,7 @@ button:disabled { cursor: not-allowed; }
 .calendarLegendSwatch.cup { background: #bd7917; }
 .calendarLegendSwatch.challenge { background: #5958ad; }
 .calendarLegendSwatch.prerelease { background: #168366; }
+.calendarLegendSwatch.friendly { background: #b04a77; }
 .calendarLegendSwatch.other { background: #597084; }
 .calendarTypeBadges { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; width: 100%; min-height: 12px; }
 .calendarTypeBadge { display: inline-flex; align-items: center; gap: 1px; min-height: 15px; padding: 1px 3px; border-radius: 3px; font-size: 9px; font-weight: 800; line-height: 1; white-space: nowrap; }
@@ -178,6 +182,7 @@ button:disabled { cursor: not-allowed; }
 .calendarTypeBadge.cup { background: #fff0d8; color: #8d5511; }
 .calendarTypeBadge.challenge { background: #e9edff; color: #4e50a1; }
 .calendarTypeBadge.prerelease { background: #e5f4ee; color: #106e54; }
+.calendarTypeBadge.friendly { background: #f9e9f0; color: #92385f; }
 .calendarTypeBadge.other { background: #e8f1f6; color: #3c647b; }
 .calendarSelectedTypes { margin: -2px 0 14px; }
 .calendarTypeBadges.expanded { justify-content: flex-start; gap: 7px; }

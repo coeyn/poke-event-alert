@@ -23,8 +23,10 @@ function text(row, ...keys) {
   return "";
 }
 
-function normalizeType(value) {
+function normalizeType(value, title = "") {
   const type = value.toLowerCase();
+  const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(name)) return "Friendly";
   if (type.includes("challenge")) return "Challenge";
   if (type.includes("cup")) return "Cup";
   if (type.includes("pre") && type.includes("release")) return "Avant-première";
@@ -76,7 +78,7 @@ function normalize(row) {
   return {
     id,
     title: text(row, "name", "Name", "title") || "Événement Play! Pokémon",
-    type: normalizeType(text(row, "type", "Subtype", "category")),
+    type: normalizeType(text(row, "type", "Subtype", "category"), text(row, "name", "Name", "title")),
     game: normalizeGame(row),
     startsAt: date.toISOString(),
     publishedAt: text(row, "date_added", "created_at", "published_at") || null,
