@@ -27,13 +27,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="appFrame">
-      <header className="topbar">
-        <Link className="brand" href="/">
-          <span className="brandMark" aria-hidden="true">P<span>.</span></span>
-          <strong>Poké Event Alert</strong>
-        </Link>
-        <span className="headerEdition">Play! Pokémon · France</span>
-      </header>
       <nav className="bottomNav" aria-label="Navigation principale">
         {links.map((link) => {
           const active =
