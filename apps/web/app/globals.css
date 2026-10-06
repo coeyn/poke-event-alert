@@ -216,6 +216,13 @@ button:disabled { cursor: not-allowed; }
 
 .settingsCard, .detailCard { padding: 21px; margin-bottom: 13px; border: 1px solid var(--line); border-radius: 11px; background: #fff; }
 .settingsCard h2 { margin: 0 0 10px; font-size: 17px; letter-spacing: -.025em; }
+.accountModes { display: flex; gap: 6px; margin: 14px 0; padding: 4px; border-radius: 8px; background: #f0f3f1; }
+.accountModes button { min-height: 40px; flex: 1; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; }
+.accountModes button.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px #17291b14; }
+.accountForm { display: grid; gap: 12px; }
+.accountForm label { display: grid; gap: 6px; color: var(--text); font-size: 12px; font-weight: 700; }
+.accountForm input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--text); font: inherit; }
+.accountForm .primaryButton { margin: 3px 0 0; }
 .settingHint, .mutedCard p { margin: 6px 0 15px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .settingRow { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 54px; padding: 7px 0; border-bottom: 1px solid #edf0ee; font-size: 14px; }
 .settingRow:last-child { border-bottom: 0; }

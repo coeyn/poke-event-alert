@@ -1,4 +1,5 @@
 import type { PreviewEvent } from "./preview";
+import { saveLocalProfileToFirebase } from "./firebase-profile";
 
 export type LocalSettings = {
   challenge: boolean;
@@ -43,6 +44,7 @@ export function readLocalSettings(): LocalSettings {
 export function saveLocalSettings(settings: LocalSettings) {
   localStorage.setItem(KEY, JSON.stringify(settings));
   window.dispatchEvent(new Event("poke-settings-changed"));
+  void saveLocalProfileToFirebase().catch(() => undefined);
 }
 
 export function matchesEventType(type: string, settings: LocalSettings) {

@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'followedVenueKeys', 'blockedVenues', 'settings', 'updatedAt'
+        ])
+        && request.resource.data.followedVenueKeys is list
+        && request.resource.data.followedVenueKeys.size() <= 500
+        && request.resource.data.blockedVenues is list
+        && request.resource.data.blockedVenues.size() <= 500
+        && request.resource.data.settings is map
+        && request.resource.data.settings.keys().hasOnly([
+          'challenge', 'cup', 'prerelease', 'other', 'discoveryRadiusKm'
+        ])
+        && request.resource.data.settings.challenge is bool
+        && request.resource.data.settings.cup is bool
+        && request.resource.data.settings.prerelease is bool
+        && request.resource.data.settings.other is bool
+        && request.resource.data.settings.discoveryRadiusKm is number
+        && request.resource.data.settings.discoveryRadiusKm >= 0
+        && request.resource.data.settings.discoveryRadiusKm <= 200;
+    }
+  }
+}

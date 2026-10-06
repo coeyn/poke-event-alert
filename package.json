@@ -8,5 +8,8 @@
   "scripts": {
     "dev": "echo \"Scaffold ready: install app dependencies in apps/web and apps/api\"",
     "lint": "echo \"Lint configuration pending MVP scaffold\""
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.5"
   }
 }

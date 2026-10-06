@@ -259,6 +259,15 @@ export function venuesFromEvents(events: PreviewEvent[]): PreviewVenue[] {
 }
 
 const FAVORITES_KEY = "poke-event-alert:preview-favorites";
+// Cloud account sync is optional until Firebase is configured.
+async function syncFavoritesToFirebase() {
+  try {
+    const { saveLocalProfileToFirebase } = await import("./firebase-profile");
+    await saveLocalProfileToFirebase();
+  } catch {
+    // Keep local favorites usable when the cloud is unavailable.
+  }
+}
 
 export function readFavorites(): string[] {
   try {
@@ -274,6 +283,7 @@ export function toggleFavorite(key: string): string[] {
   else set.add(key);
   const values = [...set];
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(values));
+  void syncFavoritesToFirebase();
   return values;
 }
 

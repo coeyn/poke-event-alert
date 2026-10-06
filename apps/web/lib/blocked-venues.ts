@@ -19,5 +19,7 @@ export function setVenueBlocked(venue: BlockedVenue, blocked: boolean): BlockedV
   if (blocked) next.push(venue);
   localStorage.setItem(KEY, JSON.stringify(next));
   window.dispatchEvent(new Event("poke-settings-changed"));
+  void saveLocalProfileToFirebase().catch(() => undefined);
   return next;
 }
+import { saveLocalProfileToFirebase } from "./firebase-profile";

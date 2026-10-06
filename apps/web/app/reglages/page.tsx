@@ -13,6 +13,7 @@ import {
 } from "../../lib/push";
 import { DEFAULT_SETTINGS, readLocalSettings, saveLocalSettings, type LocalSettings } from "../../lib/local-settings";
 import { readBlockedVenues, setVenueBlocked, type BlockedVenue } from "../../lib/blocked-venues";
+import { FirebaseAccount } from "../../components/FirebaseAccount";
 
 export default function ReglagesPage() {
   const [settings, setSettings] = useState<LocalSettings>(DEFAULT_SETTINGS);
@@ -118,6 +119,8 @@ export default function ReglagesPage() {
     <>
       <header className="workspaceHead"><h1>Réglages</h1></header>
 
+      <FirebaseAccount />
+
       <section className="settingsCard">
         <h2>Découvrir autour de moi</h2>
         <p className="settingHint">Le calendrier affiche toujours les événements de tes boutiques favorites. Ajoute aussi ceux d'autres boutiques dans un rayon autour de ta position.</p>
@@ -138,7 +141,7 @@ export default function ReglagesPage() {
 
       <section className="settingsCard">
         <h2>Boutiques bloquées</h2>
-        <p className="settingHint">Leurs événements n’apparaissent plus dans l’accueil, la recherche ni le calendrier. Cette liste est enregistrée sur cet appareil.</p>
+        <p className="settingHint">Leurs événements n’apparaissent plus dans l’accueil, la recherche ni le calendrier. La liste reste sur cet appareil sans compte et se synchronise avec ton compte si tu es connecté.</p>
         {blockedVenues.length ? <div className="blockedVenueList">{blockedVenues.map((venue) => <div className="blockedVenueRow" key={venue.key}><span><strong>{venue.name}</strong><small>{venue.city || "France"}</small></span><button type="button" className="secondaryButton" onClick={() => setBlockedVenues(setVenueBlocked(venue, false))} aria-label={`Débloquer ${venue.name}`}>Débloquer</button></div>)}</div> : <p className="settingHint">Aucune boutique bloquée.</p>}
       </section>
 
