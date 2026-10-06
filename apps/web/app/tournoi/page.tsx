@@ -43,7 +43,7 @@ export default function TournamentPage() {
         <span className="eyebrow">Tournoi</span>
         <h1>Événement introuvable</h1>
         <p className="mutedText">Il n'est peut-être plus présent dans la fenêtre actuelle de la preview.</p>
-        <Link className="secondaryButton" href="/">← Retour aux événements</Link>
+        <Link className="secondaryButton" href="/explorer/">← Retour aux événements</Link>
       </section>
     );
   }
@@ -78,7 +78,7 @@ export default function TournamentPage() {
 
   return (
     <>
-      <Link className="backLink" href="/">← Retour aux événements</Link>
+      <Link className="backLink" href="/explorer/">← Retour aux événements</Link>
 
       <section className="detailCard">
         <div className="chips">

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EventCard } from "./EventCard";
 import { Loading } from "./Loading";
 import { loadUpcomingSnapshot, readFavorites, type PreviewEvent } from "../lib/preview";
-import { distanceKm, matchesEventType, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { isPersonalEvent, readLocalSettings, type LocalSettings } from "../lib/local-settings";
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -28,6 +28,11 @@ export function CalendarView() {
   useEffect(() => {
     setFavorites(readFavorites());
     setSettings(readLocalSettings());
+    const requestedDay = new URLSearchParams(window.location.search).get("day");
+    if (requestedDay && /^\d{4}-\d{2}-\d{2}$/.test(requestedDay)) {
+      const requestedDate = new Date(`${requestedDay}T12:00:00`);
+      if (!Number.isNaN(requestedDate.getTime())) { setSelectedDay(requestedDay); setMonth(new Date(requestedDate.getFullYear(), requestedDate.getMonth(), 1)); }
+    }
     loadUpcomingSnapshot().then((snapshot) => { setEvents(snapshot.events); setScope(snapshot.scope); }).catch(() => setError("Le calendrier est momentanément indisponible.")).finally(() => setLoading(false));
     const refresh = () => { setFavorites(readFavorites()); setSettings(readLocalSettings()); };
     window.addEventListener("focus", refresh);
@@ -38,12 +43,7 @@ export function CalendarView() {
     };
   }, []);
 
-  const visible = useMemo(() => events.filter((event) => {
-    if (!settings || !matchesEventType(event.type, settings)) return false;
-    if (favorites.includes(event.venueKey)) return true;
-    if (!settings.location || !settings.discoveryRadiusKm || event.latitude == null || event.longitude == null) return false;
-    return distanceKm(settings.location, { latitude: event.latitude, longitude: event.longitude }) <= settings.discoveryRadiusKm;
-  }), [events, favorites, settings]);
+  const visible = useMemo(() => settings ? events.filter((event) => isPersonalEvent(event, favorites, settings)) : [], [events, favorites, settings]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, PreviewEvent[]>();
@@ -97,6 +97,6 @@ export function CalendarView() {
     </section>
     {scope && <p className="calendarScope">Événements publiés du {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(firstMonth)} au {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(lastMonth)}.</p>}
     <div className="sectionHead calendarEventsHead"><h2>{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${selectedDay}T12:00:00`))}</h2><span>{dayEvents.length} événement{dayEvents.length > 1 ? "s" : ""}</span></div>
-    {dayEvents.length ? <div className="eventList">{dayEvents.map((event) => <EventCard key={event.id} event={event} />)}</div> : <div className="emptyState"><div>○</div><h3>Rien de prévu ce jour</h3><p>{favorites.length ? "Choisis un autre jour ou élargis ton rayon de découverte." : "Commence par suivre des boutiques pour remplir ton calendrier."}</p>{!favorites.length && <Link className="secondaryButton" href="/">Découvrir des boutiques →</Link>}</div>}
+    {dayEvents.length ? <div className="eventList">{dayEvents.map((event) => <EventCard key={event.id} event={event} />)}</div> : <div className="emptyState"><div>○</div><h3>Rien de prévu ce jour</h3><p>{favorites.length ? "Choisis un autre jour ou élargis ton rayon de découverte." : "Commence par suivre des boutiques pour remplir ton calendrier."}</p>{!favorites.length && <Link className="secondaryButton" href="/explorer/">Découvrir des boutiques →</Link>}</div>}
   </>;
 }

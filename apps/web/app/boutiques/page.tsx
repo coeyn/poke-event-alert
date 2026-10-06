@@ -3,11 +3,7 @@ import { LiveData } from "../../components/LiveData";
 export default function BoutiquesPage() {
   return (
     <>
-      <section className="pageIntro">
-        <span className="eyebrow">Découvrir</span>
-        <h1>Trouve ta boutique</h1>
-        <p>Recherche une boutique ou une Ligue et ajoute-la à tes favoris.</p>
-      </section>
+      <header className="workspaceHead"><div><span className="eyebrow">Recherche</span><h1>Boutiques</h1></div></header>
       <LiveData mode="venues" />
     </>
   );

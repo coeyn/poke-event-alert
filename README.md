@@ -126,7 +126,7 @@ npm run --workspace @poke-event-alert/web preview:data
 npm run --workspace @poke-event-alert/web dev
 ```
 
-Ouvrir `http://localhost:3000`. Le snapshot local est régénéré par `preview:data` et n'est pas versionné. La page Explorer réunit événements et boutiques. Le calendrier combine les boutiques suivies avec, si le joueur l'active, les événements dans un rayon autour de sa position. La position et le rayon sont conservés uniquement dans le navigateur. La gestion partagée des inscriptions boutique est cadrée dans [`docs/REGISTRATIONS.md`](docs/REGISTRATIONS.md) pour la phase backend.
+Ouvrir `http://localhost:3000`. Le snapshot local est régénéré par `preview:data` et n'est pas versionné. L'accueil montre un mini calendrier, les prochains événements et les annonces ajoutées dans les sept derniers jours. La page Explorer réunit recherche d'événements et de boutiques avec filtres. Le calendrier combine les boutiques suivies avec, si le joueur l'active, les événements dans un rayon autour de sa position. La position et le rayon sont conservés uniquement dans le navigateur. La gestion partagée des inscriptions boutique est cadrée dans [`docs/REGISTRATIONS.md`](docs/REGISTRATIONS.md) pour la phase backend.
 
 ### Pour les agents de code / Codex
 

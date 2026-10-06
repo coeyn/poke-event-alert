@@ -79,6 +79,7 @@ function normalize(row) {
     type: normalizeType(text(row, "type", "Subtype", "category")),
     game: normalizeGame(row),
     startsAt: date.toISOString(),
+    publishedAt: text(row, "date_added", "created_at", "published_at") || null,
     sourceUrl: text(row, "pokemon_url", "Event_website", "url") || "https://play.pokemon.com/",
     venueKey: leagueId ? `league:${leagueId}` : `name:${venueName.toLowerCase()}`,
     venueName,

@@ -4,6 +4,7 @@ export type PreviewEvent = {
   type: string;
   game: string;
   startsAt: string;
+  publishedAt?: string | null;
   sourceUrl: string;
   venueKey: string;
   venueName: string;
@@ -102,6 +103,7 @@ function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
     type: displayType(event.eventType),
     game: event.game || "Play!",
     startsAt: event.startsAt,
+    publishedAt: null,
     sourceUrl: event.sourceUrl || "https://play.pokemon.com/",
     venueKey: resolvedVenueKey,
     venueName,

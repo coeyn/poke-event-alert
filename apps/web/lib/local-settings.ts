@@ -1,3 +1,5 @@
+import type { PreviewEvent } from "./preview";
+
 export type LocalSettings = {
   challenge: boolean;
   cup: boolean;
@@ -58,4 +60,11 @@ export function distanceKm(a: { latitude: number; longitude: number }, b: { lati
   const value = Math.sin(dLat / 2) ** 2 +
     Math.cos(radians(a.latitude)) * Math.cos(radians(b.latitude)) * Math.sin(dLon / 2) ** 2;
   return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+}
+
+export function isPersonalEvent(event: PreviewEvent, favorites: string[], settings: LocalSettings) {
+  if (!matchesEventType(event.type, settings)) return false;
+  if (favorites.includes(event.venueKey)) return true;
+  if (!settings.location || !settings.discoveryRadiusKm || event.latitude == null || event.longitude == null) return false;
+  return distanceKm(settings.location, { latitude: event.latitude, longitude: event.longitude }) <= settings.discoveryRadiusKm;
 }

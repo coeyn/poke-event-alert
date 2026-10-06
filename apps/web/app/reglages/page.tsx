@@ -134,11 +134,7 @@ export default function ReglagesPage() {
 
   return (
     <>
-      <section className="pageIntro">
-        <span className="eyebrow">Préférences</span>
-        <h1>Mes alertes</h1>
-        <p>Choisis les événements pour lesquels tu souhaites être prévenu.</p>
-      </section>
+      <header className="workspaceHead"><div><span className="eyebrow">Personnalisation</span><h1>Réglages</h1></div></header>
 
       <section className="settingsCard">
         <h2>Découvrir autour de moi</h2>

@@ -30,6 +30,8 @@ export function LiveData({ mode }: { mode: Mode }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"events" | "venues">("events");
   const [visibleCount, setVisibleCount] = useState(40);
+  const [eventType, setEventType] = useState("Tous");
+  const [followedOnly, setFollowedOnly] = useState(false);
   const activeMode = mode === "discover" ? tab : mode;
 
   useEffect(() => {
@@ -56,13 +58,14 @@ export function LiveData({ mode }: { mode: Mode }) {
     () =>
       events
         .filter((event) =>
-          !q ||
-          [event.title, event.venueName, event.city, event.type, event.game]
+          (!q || [event.title, event.venueName, event.city, event.type, event.game]
             .join(" ")
             .toLowerCase()
-            .includes(q)
+            .includes(q)) &&
+          (eventType === "Tous" || event.type === eventType) &&
+          (!followedOnly || favorites.includes(event.venueKey))
         ),
-    [events, q]
+    [events, q, eventType, followedOnly, favorites]
   );
 
   const filteredVenues = useMemo(
@@ -134,16 +137,17 @@ export function LiveData({ mode }: { mode: Mode }) {
   if (loading) return <Loading />;
   if (error) return <div className="notice error">{error}</div>;
 
-  const controls = mode === "discover" ? <>
-    <label className="searchBox"><span aria-hidden="true">⌕</span><input aria-label="Rechercher un événement ou une boutique" value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Événement, boutique, ville…" /></label>
+  const controls = mode === "discover" ? <div className="exploreTools">
+    <label className="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3" /><path d="m16 16 4.2 4.2" /></svg><input aria-label="Rechercher un événement ou une boutique" value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Événement, boutique, ville…" />{query && <button type="button" className="clearSearch" onClick={() => { setQuery(""); setVisibleCount(40); }} aria-label="Effacer la recherche">×</button>}</label>
     <div className="discoverTabs" role="tablist" aria-label="Résultats de recherche"><button type="button" role="tab" aria-selected={tab === "events"} className={tab === "events" ? "active" : ""} onClick={() => { setTab("events"); setVisibleCount(40); }}>Événements <span>{filteredEvents.length}</span></button><button type="button" role="tab" aria-selected={tab === "venues"} className={tab === "venues" ? "active" : ""} onClick={() => { setTab("venues"); setVisibleCount(40); }}>Boutiques <span>{filteredVenues.length}</span></button></div>
-  </> : null;
+    {tab === "events" && <div className="filterBar" aria-label="Filtrer les événements">{["Tous", "Challenge", "Cup", "Avant-première", "Tournoi"].map((type) => <button key={type} type="button" className={eventType === type ? "filterChip active" : "filterChip"} aria-pressed={eventType === type} onClick={() => { setEventType(type); setVisibleCount(40); }}>{type}</button>)}<button type="button" className={followedOnly ? "filterChip favoriteFilter active" : "filterChip favoriteFilter"} aria-pressed={followedOnly} onClick={() => { setFollowedOnly((value) => !value); setVisibleCount(40); }}>★ Mes boutiques</button></div>}
+  </div> : null;
 
   if (activeMode === "events") {
     return (
       <>
         {controls ?? <div className="searchBox">
-          <span>⌕</span>
+          <span aria-hidden="true">⌕</span>
           <input value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Boutique, ville, Challenge, Cup…" />
         </div>}
         <div className="sectionHead">
@@ -166,7 +170,7 @@ export function LiveData({ mode }: { mode: Mode }) {
       {controls}
       {mode === "venues" && (
         <div className="searchBox">
-          <span>⌕</span>
+          <span aria-hidden="true">⌕</span>
           <input value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(40); }} placeholder="Nom, ville ou League ID…" />
         </div>
       )}
@@ -182,7 +186,8 @@ export function LiveData({ mode }: { mode: Mode }) {
         <div className="emptyState">
           <div>★</div>
           <h3>Aucune boutique suivie</h3>
-          <p>Va dans « Boutiques » et ajoute celles que tu veux surveiller.</p>
+          <p>Recherche une boutique dans Explorer, puis touche « Suivre ».</p>
+          <Link className="secondaryButton" href="/explorer/">Explorer les boutiques →</Link>
         </div>
       )}
       {activeMode === "venues" && list.length === 0 && <div className="emptyState"><h3>Aucune boutique trouvée</h3><p>Essaie un autre nom ou une autre ville.</p></div>}
@@ -198,30 +203,10 @@ export function LiveData({ mode }: { mode: Mode }) {
                   <h3>{venue.name}</h3>
                   <p>{venue.city || venue.address || "France"}</p>
                 </div>
-                <button
-                  className={followed ? "starButton active" : "starButton"}
-                  onClick={() => void favorite(venue)}
-                  aria-label={followed ? "Ne plus suivre" : "Suivre"}
-                >
-                  ★
-                </button>
+                <button className={followed ? "starButton active" : "starButton"} onClick={() => void favorite(venue)} aria-label={followed ? `Ne plus suivre ${venue.name}` : `Suivre ${venue.name}`} aria-pressed={followed}><span aria-hidden="true">★</span> {followed ? "Suivie" : "Suivre"}</button>
               </div>
-              {venue.leagueId && <div className="leagueId">League #{venue.leagueId}</div>}
-              <Link className="venueDetailLink" href={`/boutique/?key=${encodeURIComponent(venue.key)}`}>
-                Voir la boutique →
-              </Link>
-              <div className="venueEvents">
-                <strong>{eventCount}</strong>
-                <span> événement{eventCount > 1 ? "s" : ""} à venir</span>
-              </div>
-              <div className="miniEvents">
-                {venue.events.slice(0, 3).map((event) => (
-                  <Link key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
-                    <span>{event.type}</span>
-                    <b>{formatShort(event.startsAt)}</b>
-                  </Link>
-                ))}
-              </div>
+              <div className="venueMeta">{venue.leagueId && <span className="leagueId">League #{venue.leagueId}</span>}<span className="venueEvents"><strong>{eventCount}</strong> événement{eventCount > 1 ? "s" : ""} à venir</span></div>
+              <div className="venueFoot">{venue.events[0] ? <span>Prochain · {venue.events[0].type} le {formatShort(venue.events[0].startsAt)}</span> : <span>Événements à venir</span>}<Link className="venueDetailLink" href={`/boutique/?key=${encodeURIComponent(venue.key)}`}>Voir la boutique <span aria-hidden="true">→</span></Link></div>
             </article>
           );
         })}
