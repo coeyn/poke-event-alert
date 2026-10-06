@@ -12,7 +12,7 @@ export function EventCard({ event }: { event: PreviewEvent }) {
         <span>{new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(date)}</span>
         <b>{date.getDate()}</b>
       </div>
-      <EventTypeMark type={event.type} />
+      <EventTypeMark type={event.type} game={event.game} />
       <div className="eventBody">
         <div className="chips">
           <span className="chip typeChip">{event.type}</span>

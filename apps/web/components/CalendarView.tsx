@@ -7,6 +7,8 @@ import { Loading } from "./Loading";
 import { loadUpcomingSnapshot, readFavorites, type PreviewEvent } from "../lib/preview";
 import { isPersonalEvent, readLocalSettings, type LocalSettings } from "../lib/local-settings";
 import { readBlockedVenues } from "../lib/blocked-venues";
+import { CalendarTypeBadges, CalendarTypeLegend } from "./CalendarTypeBadges";
+import { eventCategorySummary } from "../lib/event-category";
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -89,17 +91,19 @@ export function CalendarView() {
         <div><span className="eyebrow">Agenda</span><h2>{monthLabel}</h2></div>
         <div className="calendarControls"><button type="button" onClick={() => shiftMonth(-1)} disabled={!canGoBack} aria-label="Mois précédent">‹</button><button type="button" onClick={() => shiftMonth(1)} disabled={!canGoNext} aria-label="Mois suivant">›</button></div>
       </div>
+      <CalendarTypeLegend />
       <div className="calendarGrid weekdayRow">{["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => <span key={day}>{day}</span>)}</div>
       <div className="calendarGrid daysGrid">{cells.map((day, index) => {
         if (day === null) return <span key={`blank-${index}`} aria-hidden="true" />;
         const key = dayKey(new Date(month.getFullYear(), month.getMonth(), day));
         const matches = byDay.get(key) ?? [];
         const unavailable = Boolean(scope && (key < scope.start || key > scope.end));
-        return <button key={key} type="button" disabled={unavailable} className={`calendarDay${selectedDay === key ? " selected" : ""}${key === dayKey(new Date()) ? " today" : ""}`} onClick={() => setSelectedDay(key)} aria-label={`${day} ${monthLabel}${unavailable ? ", hors période" : `, ${matches.length} événement${matches.length > 1 ? "s" : ""}`}`} aria-pressed={selectedDay === key}><span>{day}</span>{matches.length > 0 && <i aria-hidden="true" />}</button>;
+        return <button key={key} type="button" disabled={unavailable} className={`calendarDay${selectedDay === key ? " selected" : ""}${key === dayKey(new Date()) ? " today" : ""}`} onClick={() => setSelectedDay(key)} aria-label={`${day} ${monthLabel}${unavailable ? ", hors période" : `, ${matches.length} événement${matches.length > 1 ? "s" : ""}${matches.length ? ` : ${eventCategorySummary(matches)}` : ""}`}`} aria-pressed={selectedDay === key}><span className="calendarDayTop"><span>{day}</span>{matches.length > 0 && <b>{matches.length}</b>}</span><CalendarTypeBadges events={matches} /></button>;
       })}</div>
     </section>
     {scope && <p className="calendarScope">Événements publiés du {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(firstMonth)} au {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(lastMonth)}.</p>}
     <div className="sectionHead calendarEventsHead"><h2>{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${selectedDay}T12:00:00`))}</h2><span>{dayEvents.length} événement{dayEvents.length > 1 ? "s" : ""}</span></div>
+    {dayEvents.length > 0 && <div className="calendarSelectedTypes" aria-label="Répartition des événements du jour"><CalendarTypeBadges events={dayEvents} expanded /></div>}
     {dayEvents.length ? <div className="eventList">{dayEvents.map((event) => <EventCard key={event.id} event={event} />)}</div> : <div className="emptyState"><div>○</div><h3>Rien de prévu ce jour</h3><p>{favorites.length ? "Choisis un autre jour ou élargis ton rayon de découverte." : "Commence par suivre des boutiques pour remplir ton calendrier."}</p>{!favorites.length && <Link className="secondaryButton" href="/explorer/">Découvrir des boutiques →</Link>}</div>}
   </>;
 }

@@ -100,7 +100,7 @@ export default function TournamentPage() {
       <Link className="backLink" href="/explorer/">← Retour aux événements</Link>
 
       <section className="detailCard">
-        <div className="eventDetailVisual"><EventTypeMark type={event.type} size="large" /><span>{event.type}</span></div>
+        <div className="eventDetailVisual"><EventTypeMark type={event.type} game={event.game} size="large" /><span>{event.type}</span></div>
         <div className="chips">
           <span className="chip">{event.game}</span>
         </div>
