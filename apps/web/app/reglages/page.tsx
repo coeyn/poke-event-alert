@@ -13,7 +13,6 @@ import {
 } from "../../lib/push";
 import { DEFAULT_SETTINGS, readLocalSettings, saveLocalSettings, type LocalSettings } from "../../lib/local-settings";
 import { readBlockedVenues, setVenueBlocked, type BlockedVenue } from "../../lib/blocked-venues";
-import { LiveData } from "../../components/LiveData";
 
 export default function ReglagesPage() {
   const [settings, setSettings] = useState<LocalSettings>(DEFAULT_SETTINGS);
@@ -118,12 +117,6 @@ export default function ReglagesPage() {
   return (
     <>
       <header className="workspaceHead"><h1>Réglages</h1></header>
-
-      <section className="settingsCard">
-        <h2>Boutiques suivies</h2>
-        <p className="settingHint">Gère ici les boutiques dont tu veux retrouver les événements dans ton calendrier et recevoir les alertes.</p>
-        <LiveData mode="favorites" showHeading={false} />
-      </section>
 
       <section className="settingsCard">
         <h2>Découvrir autour de moi</h2>
