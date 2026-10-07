@@ -21,7 +21,7 @@ import { readBlockedVenues, setVenueBlocked } from "../lib/blocked-venues";
 
 type Mode = "discover" | "events" | "venues" | "favorites";
 
-export function LiveData({ mode }: { mode: Mode }) {
+export function LiveData({ mode, sectionTitle, showHeading = true }: { mode: Mode; sectionTitle?: string; showHeading?: boolean }) {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [blockedKeys, setBlockedKeys] = useState<string[]>([]);
@@ -198,10 +198,10 @@ export function LiveData({ mode }: { mode: Mode }) {
 
       {followError && <div className="notice error">{followError}</div>}
 
-      <div className="sectionHead">
-        <h2>{activeMode === "favorites" ? "Mes boutiques" : "Boutiques avec des événements"}</h2>
+      {showHeading && <div className="sectionHead">
+        <h2>{sectionTitle ?? (activeMode === "favorites" ? "Mes boutiques" : "Boutiques avec des événements")}</h2>
         <span>{list.length}</span>
-      </div>
+      </div>}
 
       {activeMode === "favorites" && list.length === 0 && (
         <div className="emptyState">
