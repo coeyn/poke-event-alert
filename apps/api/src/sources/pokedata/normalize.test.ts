@@ -52,6 +52,21 @@ test("normalizes nested venue data", () => {
   assert.equal(event.longitude, -1.6778);
 });
 
+test("recognizes French avant-première events from their title and identifies them as TCG", () => {
+  const event = normalizePokeDataEvent({
+    guid: "ap-123",
+    name: "AP ME6 1/5 manga évasion",
+    type: "Non-premier",
+    Start_date: "2026-10-24T10:00:00Z",
+    shop: "Boutique Test",
+    Products: ""
+  });
+
+  assert.ok(event);
+  assert.equal(event.eventType, "prerelease");
+  assert.equal(event.game, "tcg");
+});
+
 
 test("normalizes fields observed in the live PokéData v2 payload", () => {
   const event = normalizePokeDataEvent({

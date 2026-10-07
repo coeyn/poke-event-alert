@@ -78,11 +78,21 @@ function displayType(value: string | null | undefined, title = "") {
   const type = raw.toLowerCase();
   const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(name)) return "Friendly";
+  if ((type.includes("pre") && type.includes("release")) || /avant.?premiere|pre.?release|\bap\b/.test(type) || /avant.?premiere|pre.?release|\bap\b/.test(name)) return "Avant-première";
   if (type.includes("challenge")) return "Challenge";
   if (type.includes("cup")) return "Cup";
-  if (type.includes("pre") && type.includes("release")) return "Avant-première";
   if (type.includes("nonpremier")) return "Tournoi";
   return raw || "Événement";
+}
+
+function displayGame(value: string | null | undefined, title = "") {
+  const game = value?.trim().toLowerCase() ?? "";
+  if (game.includes("tcg") || game.includes("jcc")) return "JCC";
+  if (game === "vg" || game.includes("vgc") || game.includes("video game")) return "VGC";
+  if (game === "go" || game.includes("pokemon go")) return "GO";
+  const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/avant.?premiere|pre.?release|\bap\b/.test(name)) return "JCC";
+  return value?.trim() || "Play!";
 }
 
 function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
@@ -103,7 +113,7 @@ function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
     id: event.sourceEventId,
     title: event.title || "Événement Play! Pokémon",
     type: displayType(event.eventType, event.title),
-    game: event.game || "Play!",
+    game: displayGame(event.game, event.title),
     startsAt: event.startsAt,
     publishedAt: null,
     sourceUrl: event.sourceUrl || "https://play.pokemon.com/",
@@ -128,7 +138,14 @@ export async function loadUpcomingSnapshot(): Promise<PreviewData> {
   }
 
   const payload = (await response.json()) as PreviewData;
-  return payload;
+  return {
+    ...payload,
+    events: payload.events.map((event) => ({
+      ...event,
+      type: displayType(event.type, event.title),
+      game: displayGame(event.game, event.title)
+    }))
+  };
 }
 
 /**

@@ -81,7 +81,7 @@ function combineDateAndTime(record: JsonRecord): string | undefined {
   return isoDate(time ? `${date}T${time}` : date);
 }
 
-function normalizeEventType(record: JsonRecord): string | undefined {
+function normalizeEventType(record: JsonRecord, title: string): string | undefined {
   const raw = stringValue(record, [
     "event_type",
     "eventType",
@@ -89,17 +89,17 @@ function normalizeEventType(record: JsonRecord): string | undefined {
     "category",
     "tournament_type"
   ]);
-  if (!raw) return undefined;
-
-  const value = raw.toLowerCase();
+  const value = (raw ?? "").toLowerCase();
+  const normalizedTitle = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (value.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(normalizedTitle)) return "friendly";
+  if ((value.includes("pre") && value.includes("release")) || /avant.?premiere|pre.?release|\bap\b/.test(value) || /avant.?premiere|pre.?release|\bap\b/.test(normalizedTitle)) return "prerelease";
   if (value.includes("challenge")) return "challenge";
   if (value.includes("cup")) return "cup";
-  if (value.includes("pre") && value.includes("release")) return "prerelease";
-  if (value.includes("friendly")) return "friendly";
+  if (value.includes("nonpremier")) return "tournament";
   return raw;
 }
 
-function normalizeGame(record: JsonRecord): string | undefined {
+function normalizeGame(record: JsonRecord, title: string): string | undefined {
   const raw = stringValue(record, [
     "game",
     "game_type",
@@ -108,11 +108,12 @@ function normalizeGame(record: JsonRecord): string | undefined {
     "Products",
     "product"
   ]);
-  if (!raw) return undefined;
-  const value = raw.toLowerCase();
+  const value = (raw ?? "").toLowerCase();
   if (value.includes("tcg") || value.includes("jcc")) return "tcg";
   if (value.includes("vg") || value.includes("vgc")) return "vg";
   if (value.includes("go")) return "go";
+  const normalizedTitle = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/avant.?premiere|pre.?release|\bap\b/.test(normalizedTitle)) return "tcg";
   return raw;
 }
 
@@ -282,10 +283,10 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
   const longitude = lookupNumber(record, ["longitude", "lng", "lon", "long"]);
   if (longitude !== undefined) event.longitude = longitude;
 
-  const eventType = normalizeEventType(record);
+  const eventType = normalizeEventType(record, title);
   if (eventType) event.eventType = eventType;
 
-  const game = normalizeGame(record);
+  const game = normalizeGame(record, title);
   if (game) event.game = game;
 
   if (registrationUrl) event.registrationUrl = registrationUrl;
