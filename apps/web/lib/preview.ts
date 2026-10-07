@@ -73,6 +73,7 @@ type ApiPage<T> = {
 export function formatAdmission(value: string | null | undefined): string | null {
   const admission = value?.trim();
   if (!admission) return null;
+  if (/^0(?:[.,]0+)?\s*(?:€|eur|euros?)?$/i.test(admission) || /^(?:gratuit|free)$/i.test(admission)) return "Gratuit";
   if (/\b(eur|euros?)\b|€|gratuit|free/i.test(admission)) return admission;
   return `${admission} €`;
 }
