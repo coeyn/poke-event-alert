@@ -223,6 +223,12 @@ button:disabled { cursor: not-allowed; }
 .accountForm label { display: grid; gap: 6px; color: var(--text); font-size: 12px; font-weight: 700; }
 .accountForm input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--text); font: inherit; }
 .accountForm .primaryButton { margin: 3px 0 0; }
+.accountDivider { display: flex; align-items: center; gap: 10px; margin: 13px 0; color: var(--muted); font-size: 11px; }
+.accountDivider::before, .accountDivider::after { height: 1px; flex: 1; background: var(--line); content: ""; }
+.googleAuthButton { display: flex; min-height: 46px; align-items: center; justify-content: center; gap: 10px; width: 100%; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--text); font: inherit; font-size: 13px; font-weight: 700; }
+.googleAuthButton:hover:not(:disabled) { background: #f8faf9; border-color: #c8d1cb; }
+.googleAuthButton:disabled { opacity: .65; }
+.googleAuthButton svg { width: 19px; height: 19px; }
 .settingHint, .mutedCard p { margin: 6px 0 15px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .settingRow { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 54px; padding: 7px 0; border-bottom: 1px solid #edf0ee; font-size: 14px; }
 .settingRow:last-child { border-bottom: 0; }
