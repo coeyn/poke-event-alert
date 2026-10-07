@@ -15,6 +15,7 @@ import { previewIcsFilename, previewIcsHref } from "../../lib/ics";
 import { syncVenueFollow } from "../../lib/follows";
 import { readBlockedVenues, setVenueBlocked } from "../../lib/blocked-venues";
 import { EventTypeMark } from "../../components/EventTypeMark";
+import { EventAttendance } from "../../components/EventAttendance";
 
 export default function TournamentPage() {
   const [event, setEvent] = useState<PreviewEvent | null>(null);
@@ -147,6 +148,7 @@ export default function TournamentPage() {
           <p>Certains anciens liens Pokémon fournis avec les événements renvoient aujourd'hui vers une erreur. Poké Event Alert affiche donc le détail ici plutôt que de t'envoyer vers une page cassée.</p>
         </div>
       </section>
+      <EventAttendance eventId={event.id} />
     </>
   );
 }

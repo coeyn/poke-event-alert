@@ -231,6 +231,34 @@ button:disabled { cursor: not-allowed; }
 .googleAuthButton:hover:not(:disabled) { background: #f8faf9; border-color: #c8d1cb; }
 .googleAuthButton:disabled { opacity: .65; }
 .googleAuthButton svg { width: 19px; height: 19px; }
+.communityCard { margin-top: 13px; }
+.communityField { display: grid; gap: 7px; margin: 12px 0; color: #45564a; font-size: 12px; font-weight: 750; }
+.communityField input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #cfd8d2; border-radius: 8px; background: #fff; color: var(--text); font-size: 14px; }
+.communityFriendForm { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin-top: 19px; padding-top: 9px; border-top: 1px solid var(--line); }
+.communityPeople { margin-top: 22px; }
+.communityPeople h3 { margin: 0 0 9px; font-size: 14px; }
+.communityPerson { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 57px; padding: 9px 0; border-top: 1px solid #edf0ee; }
+.communityPerson > span { display: grid; gap: 3px; min-width: 0; }
+.communityPerson strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; }
+.communityPerson small { color: var(--muted); font-size: 11px; }
+.communityPerson > div { display: flex; gap: 9px; flex: 0 0 auto; }
+.textButton { min-height: 40px; padding: 0 6px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 800; }
+.textButton:disabled { opacity: .55; }
+.attendanceCard { padding: 20px; margin: 14px 0; border: 1px solid #d7e2db; border-radius: 11px; background: #f4f8f5; }
+.attendanceHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.attendanceHeader h2 { margin: 0; font-size: 19px; letter-spacing: -.03em; }
+.attendanceHeader p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.attendanceCount { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #dfeee4; color: #176b45; font-size: 15px; font-weight: 900; }
+.attendanceButton { width: 100%; min-height: 48px; margin: 16px 0 8px; border: 0; border-radius: 8px; background: #18764e; color: #fff; font: inherit; font-size: 14px; font-weight: 800; }
+.attendanceButton:hover:not(:disabled) { background: #105e3d; }
+.attendanceButton.attending { background: #e2f1e7; color: #176b45; }
+.attendanceButton:disabled { opacity: .7; }
+.attendeeList { margin-top: 8px; }
+.attendeeRow { display: flex; align-items: center; gap: 10px; min-height: 54px; border-top: 1px solid #dfe8e2; }
+.attendeeAvatar { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 50%; background: #dfeee4; color: #176b45; font-size: 13px; font-weight: 850; }
+.attendeeRow > span:last-child { display: grid; gap: 3px; }
+.attendeeRow strong { font-size: 12px; }
+.attendeeRow small { color: var(--muted); font-size: 11px; }
 .settingHint, .mutedCard p { margin: 6px 0 15px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .settingRow { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 54px; padding: 7px 0; border-bottom: 1px solid #edf0ee; font-size: 14px; }
 .settingRow:last-child { border-bottom: 0; }
@@ -315,6 +343,7 @@ button:disabled { cursor: not-allowed; }
   .calendarAgenda { display: block; }
   .calendarToolbar h2 { font-size: 19px; }
   .detailGrid { grid-template-columns: 1fr; }
+  .communityFriendForm { grid-template-columns: 1fr; gap: 2px; }
   .navItem { font-size: 9px; }
   .navIcon { width: 18px; height: 18px; }
 }
