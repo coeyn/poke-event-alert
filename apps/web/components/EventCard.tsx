@@ -15,7 +15,7 @@ export function EventCard({ event }: { event: PreviewEvent }) {
       <EventTypeMark type={event.type} game={event.game} />
       <div className="eventBody">
         <div className="chips">
-          <span className="chip typeChip">{event.type}</span>
+          <span className={`chip typeChip ${event.type === "Session Play" ? "sessionTypeChip" : ""}`}>{event.type}</span>
           <span className="chip soft">{event.game}</span>
           {formatAdmission(event.admission) && <span className="chip admissionChip"><strong>{formatAdmission(event.admission)}</strong></span>}
         </div>

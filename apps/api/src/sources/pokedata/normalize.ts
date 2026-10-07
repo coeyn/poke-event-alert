@@ -81,7 +81,7 @@ function combineDateAndTime(record: JsonRecord): string | undefined {
   return isoDate(time ? `${date}T${time}` : date);
 }
 
-function normalizeEventType(record: JsonRecord, title: string): string | undefined {
+function normalizeEventType(record: JsonRecord, title: string, admission?: string): string | undefined {
   const raw = stringValue(record, [
     "event_type",
     "eventType",
@@ -91,11 +91,11 @@ function normalizeEventType(record: JsonRecord, title: string): string | undefin
   ]);
   const value = (raw ?? "").toLowerCase();
   const normalizedTitle = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (value.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(normalizedTitle)) return "friendly";
   if ((value.includes("pre") && value.includes("release")) || /avant.?premiere|pre.?release|\bap\b/.test(value) || /avant.?premiere|pre.?release|\bap\b/.test(normalizedTitle)) return "prerelease";
   if (value.includes("challenge")) return "challenge";
   if (value.includes("cup")) return "cup";
-  if (value.includes("nonpremier")) return "tournament";
+  if (value.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup|entrainement|training/.test(normalizedTitle)) return "session_play";
+  if (value.includes("nonpremier") || value.includes("tournament") || value.includes("tournoi")) return admission?.trim() ? "tournament" : "session_play";
   return raw;
 }
 
@@ -284,7 +284,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
   const longitude = lookupNumber(record, ["longitude", "lng", "lon", "long"]);
   if (longitude !== undefined) event.longitude = longitude;
 
-  const eventType = normalizeEventType(record, title);
+  const eventType = normalizeEventType(record, title, admission);
   if (eventType) event.eventType = eventType;
 
   const game = normalizeGame(record, title);

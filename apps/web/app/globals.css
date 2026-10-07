@@ -73,6 +73,9 @@ button:disabled { cursor: not-allowed; }
 .eventTypeMark.friendlyMark { border: 1px solid #f0d5e1; background: #fff2f7; color: #a13e6d; }
 .eventTypeMark.friendlyMark svg { width: 62%; height: 62%; }
 .eventTypeMark.friendlyMark.small svg { width: 66%; height: 66%; }
+.eventTypeMark.sessionMark { border: 1px solid #d9d0f0; background: #f3efff; color: #694da0; }
+.eventTypeMark.sessionMark svg { width: 62%; height: 62%; }
+.eventTypeMark.sessionMark.small svg { width: 66%; height: 66%; }
 .eventTypeMark img { position: absolute; left: 50%; top: 50%; width: 94%; height: 94%; object-fit: contain; transform: translate(-50%, -50%); }
 .eventTypeMark.vgc img { width: 165%; height: 130%; max-width: none; }
 .eventTypeMark.small { width: 38px; height: 38px; border-radius: 9px; }
@@ -81,6 +84,7 @@ button:disabled { cursor: not-allowed; }
 .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
 .chip { color: #536d5c; font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .055em; }
 .chip.typeChip { color: var(--accent); }
+.chip.typeChip.sessionTypeChip { color: #694da0; }
 .chip.soft { padding-left: 7px; border-left: 1px solid #cdd5ce; color: #87948a; }
 .chip.admissionChip { display: inline-flex; align-items: center; gap: 5px; min-height: 25px; padding: 0 9px; border: 1px solid #b8dfca; border-radius: 6px; background: #eaf7ef; color: #176b45; font-size: 10px; letter-spacing: .035em; }
 .chip.admissionChip strong { color: #105b39; font-size: 12px; font-weight: 900; letter-spacing: -.02em; }
@@ -177,6 +181,7 @@ button:disabled { cursor: not-allowed; }
 .calendarLegendSwatch.challenge { background: #5958ad; }
 .calendarLegendSwatch.prerelease { background: #168366; }
 .calendarLegendSwatch.friendly { background: #b04a77; }
+.calendarLegendSwatch.session { background: #7859ae; }
 .calendarLegendSwatch.other { background: #597084; }
 .calendarTypeBadges { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; width: 100%; min-height: 12px; }
 .calendarTypeBadge { display: inline-flex; align-items: center; gap: 1px; min-height: 15px; padding: 1px 3px; border-radius: 3px; font-size: 9px; font-weight: 800; line-height: 1; white-space: nowrap; }
@@ -185,6 +190,7 @@ button:disabled { cursor: not-allowed; }
 .calendarTypeBadge.challenge { background: #e9edff; color: #4e50a1; }
 .calendarTypeBadge.prerelease { background: #e5f4ee; color: #106e54; }
 .calendarTypeBadge.friendly { background: #f9e9f0; color: #92385f; }
+.calendarTypeBadge.session { background: #f0eaff; color: #67489b; }
 .calendarTypeBadge.other { background: #e8f1f6; color: #3c647b; }
 .calendarSelectedTypes { margin: -2px 0 14px; }
 .calendarTypeBadges.expanded { justify-content: flex-start; gap: 7px; }

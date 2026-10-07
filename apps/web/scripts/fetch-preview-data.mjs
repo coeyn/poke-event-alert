@@ -30,14 +30,14 @@ function text(row, ...keys) {
   return "";
 }
 
-function normalizeType(value, title = "") {
+function normalizeType(value, title = "", cost = "") {
   const type = value.toLowerCase();
   const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(name)) return "Friendly";
   if ((type.includes("pre") && type.includes("release")) || /avant.?premiere|pre.?release|\bap\b/.test(type) || /avant.?premiere|pre.?release|\bap\b/.test(name)) return "Avant-première";
   if (type.includes("challenge")) return "Challenge";
   if (type.includes("cup")) return "Cup";
-  if (type.includes("nonpremier")) return "Tournoi";
+  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup|entrainement|training/.test(name)) return "Session Play";
+  if (type.includes("nonpremier") || type.includes("tournament") || type.includes("tournoi")) return cost.trim() ? "Tournoi" : "Session Play";
   return value || "Événement";
 }
 
@@ -86,12 +86,13 @@ function normalize(row) {
   if (!id || !venueName || Number.isNaN(date.getTime())) return null;
 
   const title = text(row, "name", "Name", "title") || "Événement Play! Pokémon";
+  const admission = text(row, "cost", "Cost", "Admission", "admission", "entry_fee", "entryFee");
   return {
     id,
     title,
-    type: normalizeType(text(row, "type", "Subtype", "category"), title),
+    type: normalizeType(text(row, "type", "Subtype", "category"), title, admission),
     game: normalizeGame(row, title),
-    admission: text(row, "cost", "Cost", "Admission", "admission", "entry_fee", "entryFee") || null,
+    admission: admission || null,
     startsAt: date.toISOString(),
     allDay,
     publishedAt: text(row, "date_added", "created_at", "published_at") || null,

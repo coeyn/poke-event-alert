@@ -67,6 +67,30 @@ test("maps the PokéData Cost field to the event admission price", () => {
   assert.equal(event.admission, "8€");
 });
 
+test("distinguishes free tournaments from no-cost Session Play events", () => {
+  const freeTournament = normalizePokeDataEvent({
+    guid: "free-tournament",
+    name: "Événement Play! Pokémon",
+    type: "nonpremier TCG",
+    when: "2026-10-07 12:00:00",
+    shop: "Boutique Test",
+    cost: "0"
+  });
+  const session = normalizePokeDataEvent({
+    guid: "session-play",
+    name: "Événement Play! Pokémon",
+    type: "nonpremier TCG",
+    when: "2026-10-07 14:00:00",
+    shop: "Boutique Test",
+    cost: ""
+  });
+
+  assert.equal(freeTournament?.eventType, "tournament");
+  assert.equal(freeTournament?.admission, "0");
+  assert.equal(session?.eventType, "session_play");
+  assert.equal(session?.admission, undefined);
+});
+
 test("recognizes French avant-première events from their title and identifies them as TCG", () => {
   const event = normalizePokeDataEvent({
     guid: "ap-123",

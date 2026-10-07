@@ -84,15 +84,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 const LIVE_VENUE_CACHE_MS = 60_000;
 const liveVenueCache = new Map<string, { expiresAt: number; venue: PreviewVenue }>();
 
-function displayType(value: string | null | undefined, title = "") {
+function displayType(value: string | null | undefined, title = "", admission?: string | null) {
   const raw = value?.trim() ?? "";
   const type = raw.toLowerCase();
   const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup/.test(name)) return "Friendly";
+  if (type.includes("session_play") || type.includes("session play")) return "Session Play";
+  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup|entrainement|training/.test(name)) return "Session Play";
   if ((type.includes("pre") && type.includes("release")) || /avant.?premiere|pre.?release|\bap\b/.test(type) || /avant.?premiere|pre.?release|\bap\b/.test(name)) return "Avant-première";
   if (type.includes("challenge")) return "Challenge";
   if (type.includes("cup")) return "Cup";
-  if (type.includes("nonpremier")) return "Tournoi";
+  if (type.includes("nonpremier") || type.includes("tournament") || type.includes("tournoi")) return admission?.trim() ? "Tournoi" : "Session Play";
   return raw || "Événement";
 }
 
@@ -123,7 +124,7 @@ function mapApiEvent(event: ApiEvent, venueKey?: string, fallbackAdmission?: str
   return {
     id: event.sourceEventId,
     title: event.title || "Événement Play! Pokémon",
-    type: displayType(event.eventType, event.title),
+    type: displayType(event.eventType, event.title, event.admission ?? fallbackAdmission),
     game: displayGame(event.game, event.title),
     admission: event.admission ?? fallbackAdmission ?? null,
     startsAt: event.startsAt,
@@ -154,7 +155,7 @@ export async function loadUpcomingSnapshot(): Promise<PreviewData> {
     ...payload,
     events: payload.events.map((event) => ({
       ...event,
-      type: displayType(event.type, event.title),
+      type: displayType(event.type, event.title, event.admission),
       game: displayGame(event.game, event.title),
       admission: event.admission ?? null
     }))
@@ -168,7 +169,7 @@ export async function loadUpcomingSnapshot(): Promise<PreviewData> {
 export async function loadUpcomingFrance(): Promise<PreviewEvent[]> {
   return (await loadUpcomingSnapshot()).events.map((event) => ({
     ...event,
-    type: displayType(event.type, event.title)
+    type: displayType(event.type, event.title, event.admission)
   }));
 }
 
