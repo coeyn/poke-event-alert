@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "preview:data": "node scripts/fetch-preview-data.mjs"
+    "lint": "eslint app components lib scripts tests playwright.config.ts",
+    "preview:data": "node scripts/fetch-preview-data.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@poke-event-alert/pokedata-normalization": "0.1.0",
     "firebase": "^12.19.0",
     "next": "16.3.6",
     "react": "19.3.0",

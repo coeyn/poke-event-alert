@@ -1,0 +1,12 @@
+{
+  "name": "@poke-event-alert/pokedata-normalization",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.js",
+  "scripts": { "lint": "eslint index.js index.test.js", "test": "node --test index.test.js" },
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "import": "./index.js" }
+  }
+}

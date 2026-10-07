@@ -8,7 +8,7 @@ const FAVORITES_KEY = "poke-event-alert:preview-favorites";
 const BLOCKED_KEY = "poke-event-alert:blocked-venues";
 const SETTINGS_KEY = "poke-event-alert:preview-settings";
 
-type CloudSettings = Pick<LocalSettings, "challenge" | "cup" | "prerelease" | "other" | "discoveryRadiusKm">;
+type CloudSettings = Pick<LocalSettings, "challenge" | "cup" | "prerelease" | "sessionPlay" | "tournament" | "other" | "discoveryRadiusKm">;
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -24,6 +24,8 @@ function readCloudSettings(): CloudSettings {
     challenge: settings.challenge ?? DEFAULT_SETTINGS.challenge,
     cup: settings.cup ?? DEFAULT_SETTINGS.cup,
     prerelease: settings.prerelease ?? DEFAULT_SETTINGS.prerelease,
+    sessionPlay: settings.sessionPlay ?? settings.other ?? DEFAULT_SETTINGS.sessionPlay,
+    tournament: settings.tournament ?? settings.other ?? DEFAULT_SETTINGS.tournament,
     other: settings.other ?? DEFAULT_SETTINGS.other,
     discoveryRadiusKm: settings.discoveryRadiusKm ?? DEFAULT_SETTINGS.discoveryRadiusKm
   };
@@ -77,6 +79,8 @@ export async function restoreFirebaseProfile(user: User) {
     ...DEFAULT_SETTINGS,
     ...localSettings,
     ...cloudSettings,
+    sessionPlay: cloudSettings.sessionPlay ?? cloudSettings.other ?? localSettings.sessionPlay ?? DEFAULT_SETTINGS.sessionPlay,
+    tournament: cloudSettings.tournament ?? cloudSettings.other ?? localSettings.tournament ?? DEFAULT_SETTINGS.tournament,
     // La position est volontairement propre à chaque appareil.
     location: localSettings.location ?? null
   }));

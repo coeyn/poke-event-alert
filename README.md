@@ -13,29 +13,16 @@ Aujourd'hui, les joueurs doivent penser à consulter régulièrement le localisa
 
 Le produit ne cherche donc pas à être un simple clone du localisateur : **la fonction principale est l'abonnement et l'alerte**.
 
-## MVP
+## Fonctionnalités
 
-Le premier objectif est de permettre à un joueur de :
-
-- rechercher une boutique / Ligue ;
-- suivre une ou plusieurs boutiques favorites ;
-- choisir les types d'événements qui l'intéressent ;
-- voir ses prochains événements dans une seule vue ;
-- recevoir une notification lorsqu'un nouvel événement correspondant apparaît ;
-- recevoir une notification lorsqu'un événement suivi change ;
-- ouvrir la page source de l'événement ;
-- ajouter l'événement à son calendrier.
-
-### Types d'événements ciblés
-
-- League Challenge
-- League Cup
-- Avant-première / Prerelease
-- Tournois et sessions Play! publics
-- Pokémon GO
-- VGC
-
-Le périmètre exact dépend des données réellement disponibles dans les sources utilisées.
+- Accueil avec mini-calendrier, événements à venir et nouveautés.
+- Explorer regroupe la recherche d'événements et de boutiques; `/boutiques/` reste disponible pour parcourir les boutiques.
+- Calendrier filtré sur les boutiques suivies et, au choix, sur les événements proches de la position du joueur.
+- Suivi et blocage de boutiques, compteurs d'événements à venir et filtres par type.
+- Détail événement avec type, jeu, boutique, horaire, prix (dont « Gratuit ») et export iCalendar.
+- Alertes Web Push NEW/UPDATED, réglables par League Challenge, League Cup, Avant-première, Session Play, Tournoi et autres événements.
+- Compte Firebase Google ou email/mot de passe; profil Play!, demandes d’amitié et présence aux événements.
+- Les données non connectées restent utilisables localement. Favoris, boutiques bloquées et préférences peuvent être synchronisés avec Firebase.
 
 ## Principes produit
 
@@ -69,6 +56,8 @@ Stack actuelle :
 - Worker d'ingestion / notifications
 - Web Push
 - export iCalendar (`.ics`)
+- Firebase Authentication / Firestore pour comptes et fonctions communautaires
+- normalisation PokéData partagée par `packages/pokedata-normalization`
 
 La source d'événements est isolée derrière des adaptateurs afin de pouvoir changer de fournisseur sans réécrire l'application.
 
@@ -116,21 +105,54 @@ Le MVP est déjà fonctionnel sur plusieurs briques :
 - déploiement GitHub Pages ;
 - déploiement Synology ARM64 via image GHCR.
 
-Le chantier en cours concerne notamment **l'ergonomie et la refonte visuelle du frontend**.
+Les événements sont normalisés par le même module partagé dans le snapshot et l'API live. Une heure PokéData sans fuseau est interprétée en heure de Paris. Les événements amicaux (échange, apprentissage, Session Play) restent distincts des tournois. Un tournoi à coût `0` est gratuit; un coût absent correspond à une Session Play pour les types tournoi/non-premier.
+
+## Routes
+
+| URL | Contenu |
+| --- | --- |
+| `/` | Accueil et prochaines dates |
+| `/explorer/` | Recherche événements et boutiques |
+| `/boutiques/` | Parcours des boutiques |
+| `/calendrier/` | Calendrier personnalisé |
+| `/mes-boutiques/` | Compte, profil joueur, amis, présences et favoris |
+| `/boutique/?key=...` | Détail boutique avec rafraîchissement live ciblé |
+| `/tournoi/?id=...` | Détail événement et export `.ics` |
+| `/reglages/` | Types Push, rayon, position et boutiques bloquées |
+
+## Firebase
+
+Firebase Authentication prend en charge Google et email/mot de passe, dont l'envoi d'un lien de réinitialisation. Les règles Firestore du dépôt protègent les profils, réservations d'identifiant Play!, liens d'amitié et présences. Après avoir vérifié les doublons existants, la réservation initiale des IDs doit être faite par une identité Admin Firebase, puis les règles publiées :
+
+```bash
+npm run firebase:migrate-play-ids
+firebase deploy --only firestore:rules --project poke-event-alert
+```
+
+La commande de migration utilise les Application Default Credentials ou `GOOGLE_APPLICATION_CREDENTIALS` vers un compte de service qui a accès Firestore. N’ajoute jamais ce fichier au dépôt. Elle s’arrête et signale les profils en doublon pour qu’ils soient résolus avant l’activation de l’unicité.
+
+Les variables de build web `NEXT_PUBLIC_FIREBASE_*` sont publiques (configuration cliente Firebase), et peuvent être définies comme variables GitHub Actions. Les clés VAPID privées et les accès PostgreSQL restent exclusivement dans les variables/secrets serveur.
 
 ## Démarrage local
 
 ```bash
 npm install
+npm run lint
+npm run typecheck
+npm test
+npm run --workspace @poke-event-alert/api test:integration
 npm run --workspace @poke-event-alert/web preview:data
+npm run --workspace @poke-event-alert/web build
+npx playwright install chromium
+npm run test:e2e
 npm run --workspace @poke-event-alert/web dev
 ```
 
-Ouvrir `http://localhost:3000`. Le snapshot local est régénéré par `preview:data` et n'est pas versionné. L'accueil montre un mini calendrier, les prochains événements et les annonces ajoutées dans les sept derniers jours. La page Explorer réunit recherche d'événements et de boutiques avec filtres. Le calendrier combine les boutiques suivies avec, si le joueur l'active, les événements dans un rayon autour de sa position. La position et le rayon sont conservés uniquement dans le navigateur. La gestion partagée des inscriptions boutique est cadrée dans [`docs/REGISTRATIONS.md`](docs/REGISTRATIONS.md) pour la phase backend.
+Ouvrir `http://localhost:3000`. Le snapshot local est régénéré par `preview:data` et n'est pas versionné. Les tests Playwright utilisent des fixtures et un faux endpoint; aucun compte Firebase n'est requis.
 
 ### Pour les agents de code / Codex
 
-Lire **[`AGENTS.md`](AGENTS.md)** avant de modifier le projet. Il contient le contexte opérationnel actuel, les contraintes de charge du NAS, la stratégie statique/live à préserver et les priorités UX de la refonte frontend.
+Lire **[`AGENTS.md`](AGENTS.md)** avant de modifier le projet. Il documente les routes et fonctionnalités courantes, les règles de normalisation, les contraintes de charge du NAS et le flux de déploiement.
 
 Voir aussi :
 

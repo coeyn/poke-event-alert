@@ -12,3 +12,4 @@ apps/web/public/data/
 *.log
 .DS_Store
 !.env.production.example
+apps/web/test-results/

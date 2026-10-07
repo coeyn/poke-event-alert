@@ -1,0 +1,22 @@
+export type NormalizedPokeDataEvent = {
+  id: string;
+  title: string;
+  type?: string;
+  game?: string;
+  admission?: string;
+  startsAt: string;
+  endsAt?: string;
+  allDay: boolean;
+  sourceUrl: string;
+  registrationUrl?: string;
+  venueName?: string;
+  venueId?: string;
+  leagueId?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  countryCode?: string;
+  latitude?: number;
+  longitude?: number;
+};
+export function normalizePokeDataEvent(input: unknown): NormalizedPokeDataEvent | undefined;

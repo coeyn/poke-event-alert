@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { firebaseAuth, firebaseConfigured } from "../lib/firebase";
 import { getCommunityProfile, loadFriendLinks, removeFriendLink, respondFriendRequest, saveCommunityProfile, sendFriendRequest, type CommunityFriendLink, type CommunityProfile } from "../lib/community";
@@ -18,18 +18,7 @@ export function CommunityAccount() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!firebaseAuth) return;
-    return onAuthStateChanged(firebaseAuth, (next) => {
-      setUser(next);
-      setProfile(null);
-      setLinks([]);
-      if (next) void refresh(next);
-      else setLoading(false);
-    });
-  }, []);
-
-  async function refresh(current = user) {
+  const refresh = useCallback(async (current: User | null) => {
     if (!current) return;
     setLoading(true);
     try {
@@ -46,7 +35,18 @@ export function CommunityAccount() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseAuth) return;
+    return onAuthStateChanged(firebaseAuth, (next) => {
+      setUser(next);
+      setProfile(null);
+      setLinks([]);
+      if (next) void refresh(next);
+      else setLoading(false);
+    });
+  }, [refresh]);
 
   async function saveProfile() {
     if (!user) return;
@@ -69,7 +69,7 @@ export function CommunityAccount() {
     try {
       if (status === "removed") await removeFriendLink(link.id);
       else await respondFriendRequest(link.id, status);
-      await refresh();
+      await refresh(user);
     } catch { setMessage("Action impossible. Vérifie les règles Firestore."); }
     finally { setBusy(false); }
   }

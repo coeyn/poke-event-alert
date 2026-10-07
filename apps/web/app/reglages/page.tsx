@@ -38,7 +38,7 @@ export default function ReglagesPage() {
       .catch(() => setPushSupported(false));
   }, []);
 
-  function toggle(key: "challenge" | "cup" | "prerelease" | "other") {
+  function toggle(key: "challenge" | "cup" | "prerelease" | "sessionPlay" | "tournament" | "other") {
     setSaved(false);
     setSettings((current) => ({ ...current, [key]: !current[key] }));
   }
@@ -51,9 +51,14 @@ export default function ReglagesPage() {
     if (PUBLIC_API_CONFIGURED) {
       try {
         const userId = await getOrCreateUserId();
-        const eventTypes = (
-          ["challenge", "cup", "prerelease", "other"] as const
-        ).filter((type) => settings[type]);
+        const eventTypes = [
+          ...(settings.challenge ? ["challenge"] : []),
+          ...(settings.cup ? ["cup"] : []),
+          ...(settings.prerelease ? ["prerelease"] : []),
+          ...(settings.sessionPlay ? ["session_play"] : []),
+          ...(settings.tournament ? ["tournament"] : []),
+          ...(settings.other ? ["other"] : [])
+        ];
 
         await savePreferences(userId, {
           eventTypes,
@@ -133,6 +138,8 @@ export default function ReglagesPage() {
         <Setting label="League Challenge" checked={settings.challenge} onChange={() => toggle("challenge")} />
         <Setting label="League Cup" checked={settings.cup} onChange={() => toggle("cup")} />
         <Setting label="Avant-premières" checked={settings.prerelease} onChange={() => toggle("prerelease")} />
+        <Setting label="Session Play" checked={settings.sessionPlay} onChange={() => toggle("sessionPlay")} />
+        <Setting label="Tournois" checked={settings.tournament} onChange={() => toggle("tournament")} />
         <Setting label="Autres événements Play!" checked={settings.other} onChange={() => toggle("other")} />
       </section>
 

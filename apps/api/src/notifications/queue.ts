@@ -49,7 +49,7 @@ export async function queueEventNotifications(
           OR p.event_types ? $3::text
           OR (
             p.event_types ? 'other'
-            AND $3::text NOT IN ('challenge', 'cup', 'prerelease')
+            AND $3::text NOT IN ('challenge', 'cup', 'prerelease', 'session_play', 'tournament')
           )
         )
       ON CONFLICT (deduplication_key) DO NOTHING

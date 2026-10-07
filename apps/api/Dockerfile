@@ -4,10 +4,12 @@ WORKDIR /app
 
 COPY package.json ./
 COPY apps/api/package.json apps/api/package.json
+COPY packages/pokedata-normalization/package.json packages/pokedata-normalization/package.json
 
 RUN npm install
 
 COPY apps/api apps/api
+COPY packages/pokedata-normalization packages/pokedata-normalization
 
 RUN npm run --workspace @poke-event-alert/api typecheck
 RUN npm run --workspace @poke-event-alert/api build
@@ -21,11 +23,13 @@ ENV HOST=0.0.0.0
 
 COPY package.json ./
 COPY apps/api/package.json apps/api/package.json
+COPY packages/pokedata-normalization/package.json packages/pokedata-normalization/package.json
 
 RUN npm install --omit=dev
 
 COPY --from=build /app/apps/api/dist /app/apps/api/dist
 COPY apps/api/migrations /app/apps/api/migrations
+COPY packages/pokedata-normalization packages/pokedata-normalization
 
 EXPOSE 3001
 

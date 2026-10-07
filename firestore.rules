@@ -11,6 +11,14 @@ service cloud.firestore {
       let path = /databases/$(database)/documents/friendLinks/$(friendPairId(otherUid));
       return signedIn() && exists(path) && get(path).data.status == 'accepted';
     }
+    function ownsPlayIdReservation(userId) {
+      let playId = request.resource.data.playId;
+      let path = /databases/$(database)/documents/playIdRegistry/$(playId.lower());
+      return playId == '' || (playId.matches('^[A-Za-z0-9_-]{3,32}$')
+        && existsAfter(path)
+        && getAfter(path).data.uid == userId
+        && getAfter(path).data.playId == playId.lower());
+    }
 
     match /users/{userId} {
       allow read, delete: if request.auth != null && request.auth.uid == userId;
@@ -25,11 +33,13 @@ service cloud.firestore {
         && request.resource.data.blockedVenues.size() <= 500
         && request.resource.data.settings is map
         && request.resource.data.settings.keys().hasOnly([
-          'challenge', 'cup', 'prerelease', 'other', 'discoveryRadiusKm'
+          'challenge', 'cup', 'prerelease', 'sessionPlay', 'tournament', 'other', 'discoveryRadiusKm'
         ])
         && request.resource.data.settings.challenge is bool
         && request.resource.data.settings.cup is bool
         && request.resource.data.settings.prerelease is bool
+        && request.resource.data.settings.sessionPlay is bool
+        && request.resource.data.settings.tournament is bool
         && request.resource.data.settings.other is bool
         && request.resource.data.settings.discoveryRadiusKm is number
         && request.resource.data.settings.discoveryRadiusKm >= 0
@@ -43,9 +53,26 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['playId', 'displayName', 'updatedAt'])
         && request.resource.data.playId is string
         && request.resource.data.playId.size() <= 32
+        && ownsPlayIdReservation(userId)
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() <= 80;
-      allow delete: if signedIn() && request.auth.uid == userId;
+      allow delete: if signedIn() && request.auth.uid == userId
+        && (resource.data.playId == '' || !existsAfter(/databases/$(database)/documents/playIdRegistry/$(resource.data.playId.lower())));
+    }
+
+    match /playIdRegistry/{playId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/playIdRegistry/$(playId))
+        && request.resource.data.keys().hasOnly(['uid', 'playId'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.playId == playId
+        && playId.matches('^[a-z0-9_-]{3,32}$');
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.playId == playId;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     match /friendLinks/{linkId} {
@@ -55,6 +82,7 @@ service cloud.firestore {
         && request.resource.data.members is list
         && request.resource.data.members.size() == 2
         && request.resource.data.members[0] != request.resource.data.members[1]
+        && request.resource.data.members[0] < request.resource.data.members[1]
         && linkId == request.resource.data.members[0] + '__' + request.resource.data.members[1]
         && request.auth.uid in request.resource.data.members
         && request.resource.data.requestedBy == request.auth.uid
@@ -78,8 +106,17 @@ service cloud.firestore {
         && request.resource.data.playId.size() >= 3
         && request.resource.data.playId.size() <= 32
         && request.resource.data.displayName is string
-        && request.resource.data.displayName.size() <= 80;
+        && request.resource.data.displayName.size() <= 80
+        && exists(/databases/$(database)/documents/publicProfiles/$(userId))
+        && get(/databases/$(database)/documents/publicProfiles/$(userId)).data.playId == request.resource.data.playId
+        && get(/databases/$(database)/documents/publicProfiles/$(userId)).data.displayName == request.resource.data.displayName;
       allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Supports safe collection-group cleanup during account deletion.
+    match /{parent=**}/attendees/{attendeeId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
   }
 }

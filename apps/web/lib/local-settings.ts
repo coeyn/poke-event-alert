@@ -5,6 +5,8 @@ export type LocalSettings = {
   challenge: boolean;
   cup: boolean;
   prerelease: boolean;
+  sessionPlay: boolean;
+  tournament: boolean;
   other: boolean;
   discoveryRadiusKm: number;
   location: { latitude: number; longitude: number } | null;
@@ -16,6 +18,8 @@ export const DEFAULT_SETTINGS: LocalSettings = {
   challenge: true,
   cup: true,
   prerelease: true,
+  sessionPlay: true,
+  tournament: true,
   other: true,
   discoveryRadiusKm: 0,
   location: null
@@ -27,6 +31,8 @@ export function readLocalSettings(): LocalSettings {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      sessionPlay: parsed.sessionPlay ?? parsed.other ?? true,
+      tournament: parsed.tournament ?? parsed.other ?? true,
       discoveryRadiusKm: Number.isFinite(parsed.discoveryRadiusKm)
         ? Math.max(0, Math.min(200, Number(parsed.discoveryRadiusKm)))
         : 0,
@@ -52,6 +58,8 @@ export function matchesEventType(type: string, settings: LocalSettings) {
   if (normalized.includes("challenge")) return settings.challenge;
   if (normalized.includes("cup")) return settings.cup;
   if (normalized.includes("avant") || normalized.includes("prerelease")) return settings.prerelease;
+  if (normalized.includes("session_play") || normalized.includes("session play") || normalized.includes("friendly")) return settings.sessionPlay;
+  if (normalized.includes("tournament") || normalized.includes("tournoi")) return settings.tournament;
   return settings.other;
 }
 

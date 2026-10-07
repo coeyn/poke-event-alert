@@ -6,7 +6,9 @@ on:
       - main
     paths:
       - "apps/api/**"
+      - "packages/**"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/container.yml"
   workflow_dispatch:
 
@@ -15,8 +17,12 @@ permissions:
   packages: write
 
 jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
   publish:
     runs-on: ubuntu-24.04-arm
+    needs: validate
 
     steps:
       - name: Checkout

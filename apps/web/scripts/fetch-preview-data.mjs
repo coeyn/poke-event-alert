@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { normalizePokeDataEvent } from "@poke-event-alert/pokedata-normalization";
 
 const API = "https://www.pokedata.ovh/events/tableapi/index_table.php";
 const DAYS = Number(process.env.PREVIEW_DAYS ?? 30);
@@ -21,90 +22,27 @@ function addDays(date, days) {
   return copy;
 }
 
-function text(row, ...keys) {
-  for (const key of keys) {
-    const value = row[key];
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (typeof value === "number") return String(value);
-  }
-  return "";
-}
-
-function normalizeType(value, title = "", cost = "") {
-  const type = value.toLowerCase();
-  const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if ((type.includes("pre") && type.includes("release")) || /avant.?premiere|pre.?release|\bap\b/.test(type) || /avant.?premiere|pre.?release|\bap\b/.test(name)) return "Avant-première";
-  if (type.includes("challenge")) return "Challenge";
-  if (type.includes("cup")) return "Cup";
-  if (type.includes("friendly") || /friendly|echange|bourse|initiation|apprentissage|apprendre a jouer|learn to play|trade meetup|entrainement|training/.test(name)) return "Session Play";
-  if (type.includes("nonpremier") || type.includes("tournament") || type.includes("tournoi")) return cost.trim() ? "Tournoi" : "Session Play";
-  return value || "Événement";
-}
-
-function normalizeGame(row, title = "") {
-  const raw = text(row, "Products", "product", "game", "type").toLowerCase();
-  if (raw.includes("tcg")) return "JCC";
-  if (raw.includes("vg")) return "VGC";
-  if (raw.includes("go")) return "GO";
-  const name = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (/avant.?premiere|pre.?release|\bap\b/.test(name)) return "JCC";
-  return "Play!";
-}
-
-function parisOffsetMinutes(instant) {
-  const part = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Paris",
-    timeZoneName: "shortOffset"
-  }).formatToParts(new Date(instant)).find((item) => item.type === "timeZoneName")?.value ?? "GMT";
-  const match = part.match(/^GMT([+-])(\d{1,2})(?::(\d{2}))?$/);
-  if (!match) return 0;
-  return (match[1] === "+" ? 1 : -1) * (Number(match[2]) * 60 + Number(match[3] ?? 0));
-}
-
-function sourceDate(value) {
-  if (/Z$|[+-]\d{2}:\d{2}$/.test(value)) return new Date(value);
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
-  if (!match) return new Date(NaN);
-  const wallTime = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] ?? 0), Number(match[5] ?? 0), Number(match[6] ?? 0));
-  let instant = wallTime - parisOffsetMinutes(wallTime) * 60_000;
-  instant = wallTime - parisOffsetMinutes(instant) * 60_000;
-  return new Date(instant);
-}
-
 function normalize(row) {
-  const id = text(row, "guid", "Guid", "id");
-  const venueName = text(row, "shop", "shop_name", "venue_name");
-  const leagueId = text(row, "league", "league_id") || null;
-  const when = text(row, "Start_date", "when", "start_datetime", "event_date", "date");
-  const date = sourceDate(when);
-  const allDay = !/[T ]\d{2}:\d{2}/.test(when);
-  const rawLatitude = row.latitude ?? row.lat;
-  const rawLongitude = row.longitude ?? row.lon ?? row.lng;
-  const latitude = rawLatitude === "" || rawLatitude == null ? NaN : Number(rawLatitude);
-  const longitude = rawLongitude === "" || rawLongitude == null ? NaN : Number(rawLongitude);
-
-  if (!id || !venueName || Number.isNaN(date.getTime())) return null;
-
-  const title = text(row, "name", "Name", "title") || "Événement Play! Pokémon";
-  const admission = text(row, "cost", "Cost", "Admission", "admission", "entry_fee", "entryFee");
+  const event = normalizePokeDataEvent(row);
+  if (!event?.venueName) return null;
   return {
-    id,
-    title,
-    type: normalizeType(text(row, "type", "Subtype", "category"), title, admission),
-    game: normalizeGame(row, title),
-    admission: admission || null,
-    startsAt: date.toISOString(),
-    allDay,
-    publishedAt: text(row, "date_added", "created_at", "published_at") || null,
-    sourceUrl: text(row, "pokemon_url", "Event_website", "url") || "https://play.pokemon.com/",
-    venueKey: leagueId ? `league:${leagueId}` : `name:${venueName.toLowerCase()}`,
-    venueName,
-    leagueId,
-    city: text(row, "city"),
-    address: text(row, "street_address", "address"),
-    countryCode: text(row, "country_code") || "FR",
-    latitude: Number.isFinite(latitude) && Math.abs(latitude) <= 90 ? latitude : null,
-    longitude: Number.isFinite(longitude) && Math.abs(longitude) <= 180 ? longitude : null
+    id: event.id,
+    title: event.title,
+    type: ({ prerelease: "Avant-première", challenge: "Challenge", cup: "Cup", session_play: "Session Play", tournament: "Tournoi" })[event.type] ?? event.type ?? "Événement",
+    game: ({ tcg: "JCC", vg: "VGC", go: "GO" })[event.game] ?? "Play!",
+    admission: event.admission ?? null,
+    startsAt: event.startsAt,
+    allDay: event.allDay,
+    publishedAt: (typeof row.date_added === "string" && row.date_added.trim()) || (typeof row.created_at === "string" && row.created_at.trim()) || (typeof row.published_at === "string" && row.published_at.trim()) || null,
+    sourceUrl: event.sourceUrl || "https://play.pokemon.com/",
+    venueKey: event.leagueId ? `league:${event.leagueId}` : event.venueId ? `pokedata:${event.venueId}` : `name:${event.venueName.toLowerCase()}`,
+    venueName: event.venueName,
+    leagueId: event.leagueId ?? null,
+    city: event.city ?? "",
+    address: event.address ?? "",
+    countryCode: event.countryCode || "FR",
+    latitude: event.latitude ?? null,
+    longitude: event.longitude ?? null
   };
 }
 

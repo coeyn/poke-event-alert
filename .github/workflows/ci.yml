@@ -1,12 +1,26 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches:
       - main
   pull_request:
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - name: Lint TypeScript and React
+        run: npm run lint
+      - name: Shared normalizer tests
+        run: npm run --workspace @poke-event-alert/pokedata-normalization test
+
   api:
     runs-on: ubuntu-latest
 
@@ -70,6 +84,9 @@ jobs:
       - name: Typecheck web
         run: npm run --workspace @poke-event-alert/web typecheck
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Generate preview event data
         run: npm run --workspace @poke-event-alert/web preview:data
 
@@ -78,6 +95,9 @@ jobs:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_BASE_PATH: "/poke-event-alert"
         run: npm run --workspace @poke-event-alert/web build
+
+      - name: End-to-end tests
+        run: npm run --workspace @poke-event-alert/web test:e2e
 
 
   deployment:

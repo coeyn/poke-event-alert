@@ -3,13 +3,29 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "dev": "echo \"Scaffold ready: install app dependencies in apps/web and apps/api\"",
-    "lint": "echo \"Lint configuration pending MVP scaffold\""
+    "dev": "npm run --workspace @poke-event-alert/web dev",
+    "lint": "eslint eslint.config.mjs scripts packages/pokedata-normalization && npm run --workspaces --if-present lint",
+    "typecheck": "npm run --workspaces --if-present typecheck",
+    "test": "npm run --workspaces --if-present test",
+    "test:e2e": "npm run --workspace @poke-event-alert/web test:e2e",
+    "firebase:migrate-play-ids": "node scripts/migrate-play-id-registry.mjs"
   },
   "overrides": {
     "@grpc/grpc-js": "1.14.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "firebase-admin": "^14.5.0",
+    "globals": "^17.13.0",
+    "typescript-eslint": "^8.71.1"
   }
 }

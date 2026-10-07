@@ -1,0 +1,65 @@
+import { expect, test } from "@playwright/test";
+
+const daysFromNow = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  date.setHours(13, 0, 0, 0);
+  return date.toISOString();
+};
+
+const fixture = {
+  generatedAt: new Date().toISOString(),
+  scope: { country: "FR", start: "2026-01-01", end: "2027-12-31", days: 30 },
+  count: 2,
+  events: [
+    { id: "e2e-challenge", title: "League Challenge de test", type: "Challenge", game: "JCC", admission: "8€", startsAt: daysFromNow(5), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
+    { id: "e2e-cup", title: "League Cup de test", type: "Cup", game: "JCC", admission: "0", startsAt: daysFromNow(12), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" }
+  ]
+};
+
+test.beforeEach(async ({ page }) => {
+  await page.route("**/data/events.json", (route) => route.fulfill({ json: fixture }));
+  await page.route("http://127.0.0.1:3999/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.pathname === "/users" && request.method() === "POST") return route.fulfill({ json: { id: "e2e-user" } });
+    if (url.pathname === "/venues" && request.method() === "GET") return route.fulfill({ json: { items: [{ id: "venue-1", source: "pokedata", leagueId: "1001", name: "Boutique Démo", city: "Rennes", countryCode: "FR" }], pagination: { limit: 25, offset: 0, total: 1, hasMore: false } } });
+    if (url.pathname.includes("/follows/")) return route.fulfill({ json: { followed: request.method() === "POST" } });
+    return route.abort();
+  });
+});
+
+test("home and Explorer find, open, follow, and unfollow a shop", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("League Challenge de test")).toBeVisible();
+  await page.getByRole("link", { name: "Explorer", exact: true }).click();
+  await page.getByRole("tab", { name: /Boutiques/ }).click();
+  await page.getByRole("textbox", { name: /Rechercher un événement ou une boutique/ }).fill("Rennes");
+  const shop = page.locator(".venueCard", { hasText: "Boutique Démo" });
+  await expect(shop).toBeVisible();
+  await shop.getByRole("button", { name: "Suivre Boutique Démo" }).click();
+  await expect(shop.getByRole("button", { name: "Ne plus suivre Boutique Démo" })).toBeVisible();
+  await shop.getByRole("link", { name: /Voir la boutique/ }).click();
+  await expect(page.getByRole("heading", { name: "Boutique Démo" })).toBeVisible();
+  await page.goto("/explorer/");
+  await page.getByRole("tab", { name: /Boutiques/ }).click();
+  const followed = page.locator(".venueCard", { hasText: "Boutique Démo" });
+  await followed.getByRole("button", { name: "Ne plus suivre Boutique Démo" }).click();
+  await expect(followed.getByRole("button", { name: "Suivre Boutique Démo" })).toBeVisible();
+});
+
+test("opens an event and calendar, with static data when the API is unavailable", async ({ page }) => {
+  await page.route("http://127.0.0.1:3999/**", (route) => route.abort());
+  await page.goto("/explorer/");
+  await expect(page.getByText("League Challenge de test")).toBeVisible();
+  await page.getByRole("link", { name: /League Challenge de test/ }).click();
+  await expect(page.getByRole("heading", { name: "League Challenge de test" })).toBeVisible();
+  await page.evaluate(() => localStorage.setItem("poke-event-alert:preview-favorites", JSON.stringify(["league:1001"])));
+  await page.goto(`/calendrier/?day=${daysFromNow(5).slice(0, 10)}`);
+  await expect(page.getByRole("heading", { name: "Calendrier" })).toBeVisible();
+  await expect(page.getByText("League Challenge de test")).toBeVisible();
+  await page.route("http://127.0.0.1:3999/venues?**", (route) => route.abort());
+  await page.goto("/boutique/?key=league%3A1001");
+  await expect(page.getByRole("heading", { name: "Boutique Démo" })).toBeVisible();
+  await expect(page.getByText("League Challenge de test")).toBeVisible();
+});

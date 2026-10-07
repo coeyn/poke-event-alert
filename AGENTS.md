@@ -1,201 +1,92 @@
-# Poké Event Alert — agent handoff
+# Poké Event Alert — guide de travail des agents
 
-This file is the current operational context for coding agents working in this repository. Read it before making changes.
+Ce document décrit l’architecture et les contraintes opérationnelles actuelles. Le projet est une PWA communautaire pour les joueurs Play! Pokémon, indépendante de The Pokémon Company International.
 
-## Product goal
+## Objectif et services
 
-Poké Event Alert is a community PWA for Play! Pokémon players.
+- Application publique : <https://coeyn.github.io/poke-event-alert/>
+- API publique : <https://nasmaine22.synology.me:8443>
+- Monorepo npm : `apps/web` (Next.js 16, React 19, export statique GitHub Pages), `apps/api` (Fastify/PostgreSQL/worker Push) et `packages/pokedata-normalization` (normalisation partagée).
+- PokéData est la source des événements. Le Synology dispose de 512 Mo de RAM environ.
 
-Main promise: **users should not miss an event published by a shop / League they follow.**
+## Chargement des données : garder l’architecture hybride
 
-The app is alert-first, not just another event locator. Users can browse events and shops, follow shops, receive Web Push notifications for new/updated matching events, open event details, and export events to iCalendar.
+1. Les listes générales d’événements et de boutiques lisent `apps/web/public/data/events.json`, généré et publié par GitHub Actions/CDN toutes les 30 minutes (`7,37 * * * *`).
+2. L’ouverture d’une boutique demande uniquement cette boutique et ses événements futurs à l’API.
+3. Les compteurs de boutiques utilisent `POST /venues/counts` en lots, seulement pour les boutiques suivies ou après une recherche.
+4. Cache navigateur des données live : 60 secondes. Le snapshot demeure disponible lorsque le NAS ne répond pas.
 
-Public web app: `https://coeyn.github.io/poke-event-alert/`
-Public API: `https://nasmaine22.synology.me:8443`
+Ne chargez pas tous les événements français du NAS depuis le navigateur. N’ajoutez pas de polling national ni de timers fréquents.
 
-This is an independent fan/community project and must keep the non-affiliation disclaimer.
+## Routes web actuelles
 
-## Current stack
+- `/` — accueil : mini-calendrier, événements à venir et événements ajoutés récemment.
+- `/boutiques/` — recherche et liste des boutiques.
+- `/explorer/` — recherche combinée événements/boutiques et filtres.
+- `/calendrier/` — événements des boutiques suivies et, avec position/rayon, événements proches.
+- `/mes-boutiques/` — compte Firebase, profil Play!, amis, présences et boutiques suivies.
+- `/boutique/?key=...` — détail boutique, mise à jour live ciblée et fallback snapshot.
+- `/tournoi/?id=...` — détail événement, prix, présence, lien source et export ICS.
+- `/reglages/` — types d’alertes, découverte locale, boutiques bloquées et Push.
 
-Monorepo:
+## Fonctionnalités à préserver
 
-- `apps/web` — Next.js 16 / React 19 static-export PWA, deployed on GitHub Pages.
-- `apps/api` — Fastify API + PostgreSQL ingestion / change detection / Push worker.
-- PostgreSQL and API run on a small Synology NAS.
-- Event source adapter currently uses PokeData (`https://pokedata.ovh/events/apiv2`).
+- PWA, service worker, navigation mobile et chemins GitHub Pages avec base `/poke-event-alert`.
+- Favoris locaux avec synchronisation API, boutiques bloquées, calendrier et export `.ics`.
+- Firebase Authentication (Google et email/mot de passe), profil public Play!, amis et présence événement.
+- Notifications Web Push NEW/UPDATED, abonnement/désabonnement, test et ouverture depuis notification.
+- Snapshot statique, fallback API hors ligne, CORS Pages et compteurs groupés.
+- Le prix provient notamment du champ PokéData `cost`; une valeur zéro s’affiche « Gratuit ».
+- La classification Session Play/Tournoi est partagée : friendly/échange/apprentissage devient Session Play; un événement non-premier/tournoi avec coût renseigné reste Tournoi (y compris coût zéro), sans coût devient Session Play. Ne changez pas cette règle sans demande explicite.
+- MISSING n’est pas automatiquement une annulation.
+- Garder le disclaimer d’indépendance/non-affiliation.
 
-The Synology is resource-constrained (512 MB RAM). **Do not redesign the frontend so every browser downloads all French events from the NAS.**
+## Normalisation PokéData
 
-## Current data-loading strategy — preserve this unless explicitly asked to change it
+`packages/pokedata-normalization/index.js` et ses déclarations/types tests sont la source commune pour les identifiants, types, jeux, dates (heure locale Europe/Paris si sans fuseau), coût et données boutique. Les adaptateurs API et snapshot peuvent adapter les formats de sortie ou les alias propres à un endpoint, mais ne dupliquent pas la classification.
 
-The frontend intentionally uses a hybrid strategy to protect the NAS:
+## Firebase et communauté
 
-1. **General event list and general shop list** use the static `events.json` snapshot hosted by GitHub Pages/CDN.
-2. GitHub Actions regenerates that snapshot every **30 minutes**.
-3. **Opening one shop page** performs a targeted live API lookup for that shop and then requests only that shop's future events.
-4. **Shop counters** are refreshed selectively with the batched `POST /venues/counts` endpoint:
-   - `Mes boutiques` refreshes followed-shop counters in one grouped request.
-   - the general shop page refreshes live counters only when the user actually enters a search query, with debounce.
-5. Browser-side live venue/count data is cached briefly (currently 60 seconds).
-6. If the NAS/API is unavailable, the static snapshot remains a valid fallback.
+- `firestore.rules` protège `users`, `publicProfiles`, `playIdRegistry`, `friendLinks` et `eventAttendance`.
+- L’identifiant Play! est réservé en minuscules dans `playIdRegistry` dans la même transaction que `publicProfiles/{uid}`. Les règles vérifient la réservation via `getAfter`.
+- Les utilisateurs peuvent lire les profils publics authentifiés; chaque propriétaire ne modifie que son profil. Les liens d’amitié ont deux membres triés, sont créés en attente et seul le destinataire répond. Les présences sont écrites/supprimées par leur propriétaire et visibles par ses amis acceptés.
+- Après toute modification des règles, les publier avec `firebase deploy --only firestore:rules --project poke-event-alert` depuis le dépôt (CLI Firebase authentifié).
+- L’UI de compte propose la réinitialisation du mot de passe et la suppression des données Firestore accessibles du compte. La suppression Auth requiert une nouvelle authentification. Ne jamais publier de config secrète; la config Firebase web publique reste dans les variables `NEXT_PUBLIC_FIREBASE_*`.
 
-Do not regress to calling `/events` for the full country on every page load.
+## Notifications et compatibilité
 
-## Important existing behavior
+Les préférences distinguent `challenge`, `cup`, `prerelease`, `session_play`, `tournament` et `other`. Le backend conserve `other` pour les types non classés. Les anciennes préférences contenant `other` reçoivent `session_play` et `tournament` lors de la migration idempotente `0003_notification_event_types.sql`. Les nouveaux réglages manquants héritent de l’ancien booléen `other`.
 
-Working features that should not be broken during UI/CSS work:
+## Développement et validation
 
-- PWA / service worker registration.
-- Bottom navigation and routes.
-- Event list and event detail pages.
-- Shop list, shop detail pages, local favorite state and backend follow synchronization.
-- Existing local favorites can migrate/sync to backend follows.
-- Web Push subscription, unsubscribe, test notification, and push click handling.
-- Push notifications for NEW / UPDATED matching events.
-- iCalendar export.
-- API CORS setup for GitHub Pages.
-- Static fallback behavior when the API is down.
-
-Push and database secrets are environment variables. Never commit or print private VAPID keys, DB passwords, or `.env` contents.
-
-## Web routes / main UI areas
-
-Current routes under `apps/web/app`:
-
-- `/` — upcoming events
-- `/boutiques/` — shop search / browse
-- `/mes-boutiques/` — followed shops
-- `/boutique/?key=...` — shop detail, refreshed live
-- `/tournoi/?id=...` — event detail
-- `/reglages/` — settings / Push controls
-
-Main reusable frontend files:
-
-- `apps/web/app/globals.css` — current global styling
-- `apps/web/components/AppShell.tsx`
-- `apps/web/components/BottomNav.tsx`
-- `apps/web/components/EventCard.tsx`
-- `apps/web/components/LiveData.tsx`
-- `apps/web/components/Loading.tsx`
-- `apps/web/lib/preview.ts` — static/live data helpers
-- `apps/web/lib/follows.ts` — favorites/follow synchronization
-- `apps/web/lib/api.ts` — API helpers
-
-## Current UI/CSS task
-
-The owner considers the current interface **ugly and not practical enough** and is moving to Codex primarily to improve the frontend presentation and usability.
-
-You are encouraged to substantially improve layout, CSS, information hierarchy, spacing, component structure, and responsive behavior. Small JSX refactors are fine when they materially improve UX.
-
-### UX priorities
-
-- **Mobile first**: this is primarily a phone PWA.
-- The first screen should make the next useful action obvious.
-- Event cards should be easy to scan quickly: event type, date/time, shop, city, and important action/link.
-- Shop cards should make the shop name, city, League ID when present, followed state, and **upcoming event count** immediately understandable.
-- Following/unfollowing a shop must be obvious and thumb-friendly.
-- `Mes boutiques` should feel like a useful dashboard, not just another copy of the shop list.
-- Search should be prominent and readable.
-- Settings / notification state should clearly communicate whether Push is enabled.
-- Keep bottom navigation usable with phone safe areas.
-- Desktop/tablet should look intentional, but mobile has priority.
-
-### Visual guidance
-
-There is no locked visual identity yet. Prefer a polished modern event-app aesthetic over a generic admin dashboard.
-
-Good defaults:
-
-- strong but simple visual hierarchy;
-- compact cards without feeling cramped;
-- clear event-type badges;
-- consistent spacing/radius/shadows;
-- strong selected/followed states;
-- readable contrast;
-- avoid excessive gradients, glassmorphism, or decorative clutter;
-- avoid making every element a separate bordered box;
-- preserve French UI copy unless there is a clear UX reason to improve wording.
-
-It can feel Pokémon-adjacent through energy and color, but do not depend on copyrighted Pokémon artwork for the core UI.
-
-### Accessibility / interaction
-
-- Aim for ~44 px touch targets for primary interactive controls.
-- Keep visible keyboard focus states.
-- Avoid horizontal scrolling on common phone widths.
-- Respect `prefers-reduced-motion` if adding meaningful animation.
-- Do not hide critical information behind hover-only interactions.
-
-## Static export / GitHub Pages constraints
-
-The web app is statically exported for GitHub Pages and uses the base path `/poke-event-alert` in deployment.
-
-Be careful with:
-
-- absolute paths;
-- asset URLs;
-- route links;
-- service worker paths;
-- anything that assumes a Node server is serving Next.js pages dynamically.
-
-GitHub Pages deployment is controlled by `.github/workflows/pages.yml`.
-
-## API / backend notes relevant to frontend work
-
-Useful routes already exist; prefer using them rather than inventing expensive frontend workarounds:
-
-- `GET /health`
-- `GET /events`
-- `GET /events/:id`
-- `GET /venues`
-- `GET /venues/:id`
-- `GET /venues/:id/events`
-- `POST /venues/counts` — batched live upcoming-event counts
-- user/follow/preferences routes
-- Push public key/subscription/test routes
-- iCalendar event route
-
-Before changing API contracts, inspect the current backend implementation and integration tests.
-
-## Event ingestion semantics
-
-Events use ingestion states including NEW / UPDATED / UNCHANGED / MISSING.
-
-Important: **MISSING is not automatically equivalent to cancelled.** Do not change UI copy to confidently call a missing event cancelled unless the backend/source has explicit cancellation information.
-
-## Development / validation
-
-Install dependencies from the repository root when needed:
+Depuis la racine :
 
 ```bash
 npm install
-```
-
-Useful web commands:
-
-```bash
-npm run --workspace @poke-event-alert/web typecheck
+npm run lint
+npm run typecheck
+npm test
+npm run --workspace @poke-event-alert/api test:integration
 npm run --workspace @poke-event-alert/web preview:data
 npm run --workspace @poke-event-alert/web build
-npm run --workspace @poke-event-alert/web dev
+npx playwright install chromium
+npm run test:e2e
+npm run dev
 ```
 
-For a UI/CSS change, at minimum run web typecheck + static build before considering it complete. CI also validates API and deployment compose files.
+Les tests Playwright utilisent des fixtures et un faux endpoint API; ils ne nécessitent pas de compte Firebase. Le build Pages exporte les routes et doit être vérifié avec `GITHUB_PAGES=true` et `NEXT_PUBLIC_BASE_PATH=/poke-event-alert`.
 
-## Working style for this repository
+## Déploiements
 
-- Inspect existing code before replacing behavior.
-- Prefer focused commits / PRs.
-- Do not remove working backend integration just to simplify CSS.
-- Do not replace the hybrid static/live strategy with polling.
-- Do not add frequent timers that hit the Synology.
-- Keep the app functional when the public API is temporarily unavailable.
-- If a visual refactor needs markup changes, preserve data flow and route semantics.
-- If you find a real functional bug while styling, fix it separately or clearly identify it rather than silently mixing a large behavioral rewrite into CSS work.
+- `.github/workflows/ci.yml` est la validation réutilisable et s’exécute sur push, PR et avant Pages/conteneur. Elle lance lint, normalisation, typechecks/tests API, migrations et intégration PostgreSQL, Playwright, snapshot, build web et validation/build Docker.
+- `.github/workflows/pages.yml` garde le cron toutes les 30 minutes, puis régénère les données, construit et déploie Pages après succès CI.
+- `.github/workflows/container.yml` ne publie l’image API après succès CI. Elle produit `linux/arm64`, tags `latest` et SHA du commit.
+- L’API contient une nouvelle migration SQL idempotente. Sur NAS, déployer le tag SHA publié; le démarrage API lance les migrations via le compose/entrypoint configuré. Vérifier le compose avant toute modification.
+- Une modification web seulement ne requiert pas de déploiement NAS. Une modification API requiert publication GHCR puis mise à jour/redémarrage du service sur NAS.
 
-## Deployment note
+## Sécurité et méthode
 
-API images are published to GHCR as both `latest` and an immutable commit-SHA tag. Synology has previously reused a stale `latest` image, so immutable SHA tags are safer for manual NAS deployments.
-
-Frontend-only changes deploy through GitHub Pages and do not require a NAS redeploy.
-Backend/API changes do require a new API image to be deployed on the NAS.
+- Ne jamais lire/afficher les fichiers `.env`, clés privées VAPID ou mots de passe de base de données. Ne jamais les committer.
+- Avant une modification de contrat API, inspecter routes, schéma SQL et tests d’intégration.
+- Garder les changements ciblés; pas de refonte CSS globale pour une tâche de consolidation.
+- Après un bloc significatif, exécuter lint, typecheck et tests pertinents; avant livraison, lancer build statique et e2e.

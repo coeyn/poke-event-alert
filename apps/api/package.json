@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
     "test": "tsx --test src/ingestion/*.test.ts src/sources/pokedata/*.test.ts",
     "source:pokedata": "tsx src/cli/fetch-pokedata.ts",
     "db:migrate": "tsx src/cli/migrate.ts",
@@ -17,6 +18,7 @@
     "start:synology": "node dist/cli/serve-with-worker.js"
   },
   "dependencies": {
+    "@poke-event-alert/pokedata-normalization": "0.1.0",
     "pg": "^8.16.0",
     "fastify": "^5.6.0",
     "web-push": "^3.6.7",

@@ -1,11 +1,14 @@
 import {
   collection,
+  collectionGroup,
   deleteDoc,
   doc,
   getDoc,
   getDocs,
   limit,
   query,
+  runTransaction,
+  writeBatch,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -30,12 +33,25 @@ export async function saveCommunityProfile(user: User, playId: string, displayNa
   if (cleanId && !/^[\w-]{3,32}$/.test(cleanId)) throw new Error("L’identifiant Play! doit contenir 3 à 32 lettres, chiffres, tirets ou underscores.");
   const cleanName = displayName.trim();
   if (!cleanName || cleanName.length > 80) throw new Error("Choisis un pseudo de 1 à 80 caractères.");
-  if (cleanId) {
-    const matches = await getDocs(query(collection(db(), "publicProfiles"), where("playId", "==", cleanId), limit(2)));
-    if (matches.docs.some((profile) => profile.id !== user.uid)) throw new Error("Cet identifiant Play! est déjà associé à un compte.");
-  }
-  const ref = doc(db(), "publicProfiles", user.uid);
-  await setDoc(ref, { playId: cleanId, displayName: cleanName, updatedAt: serverTimestamp() }, { merge: true });
+  const database = db();
+  const profile = doc(database, "publicProfiles", user.uid);
+  await runTransaction(database, async (transaction) => {
+    const existingProfile = await transaction.get(profile);
+    const previousId = existingProfile.exists() ? String(existingProfile.data().playId ?? "").toLowerCase() : "";
+    const nextId = cleanId.toLowerCase();
+    const nextReservation = nextId ? doc(database, "playIdRegistry", nextId) : null;
+    const previousReservation = previousId && previousId !== nextId
+      ? doc(database, "playIdRegistry", previousId)
+      : null;
+    const reservation = nextReservation ? await transaction.get(nextReservation) : null;
+    if (reservation?.exists() && reservation.data().uid !== user.uid) {
+      throw new Error("Cet identifiant Play! est déjà associé à un compte.");
+    }
+    const previous = previousReservation ? await transaction.get(previousReservation) : null;
+    if (previous?.exists() && previous.data().uid === user.uid) transaction.delete(previousReservation!);
+    if (nextReservation) transaction.set(nextReservation, { uid: user.uid, playId: nextId });
+    transaction.set(profile, { playId: cleanId, displayName: cleanName, updatedAt: serverTimestamp() }, { merge: true });
+  });
 }
 
 export async function getCommunityProfile(uid: string): Promise<CommunityProfile | null> {
@@ -81,4 +97,33 @@ export async function setEventAttendance(user: User, eventId: string, attending:
   const profile = await getCommunityProfile(user.uid);
   if (!profile?.playId) throw new Error("Ajoute ton identifiant Play! dans Compte avant de confirmer ta présence.");
   await setDoc(ref, { uid: user.uid, playId: profile.playId, displayName: profile.displayName, createdAt: serverTimestamp() });
+}
+
+export async function deleteCommunityAccountData(user: User) {
+  const database = db();
+  const [links, attendance] = await Promise.all([
+    getDocs(query(collection(database, "friendLinks"), where("members", "array-contains", user.uid))),
+    getDocs(query(collectionGroup(database, "attendees"), where("uid", "==", user.uid)))
+  ]);
+  const cleanup = [...links.docs, ...attendance.docs];
+  for (let offset = 0; offset < cleanup.length; offset += 450) {
+    const batch = writeBatch(database);
+    cleanup.slice(offset, offset + 450).forEach((item) => batch.delete(item.ref));
+    await batch.commit();
+  }
+
+  const privateProfile = doc(database, "users", user.uid);
+  const publicProfile = doc(database, "publicProfiles", user.uid);
+  await runTransaction(database, async (transaction) => {
+    const current = await transaction.get(publicProfile);
+    if (current.exists()) {
+      const playId = String(current.data().playId ?? "").toLowerCase();
+      if (playId) {
+        const reservation = doc(database, "playIdRegistry", playId);
+        if ((await transaction.get(reservation)).exists()) transaction.delete(reservation);
+      }
+      transaction.delete(publicProfile);
+    }
+    transaction.delete(privateProfile);
+  });
 }
