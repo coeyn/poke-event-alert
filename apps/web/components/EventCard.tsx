@@ -4,7 +4,7 @@ import { EventTypeMark } from "./EventTypeMark";
 
 export function EventCard({ event }: { event: PreviewEvent }) {
   const date = new Date(event.startsAt);
-  const time = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(date);
+  const time = event.allDay ? "Horaire à confirmer" : new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(date);
   const genericTitle = event.title === "Événement Play! Pokémon";
   return (
     <Link className="eventCard" href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>

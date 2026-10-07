@@ -108,7 +108,7 @@ export default function TournamentPage() {
         </div>
 
         <h1>{event.title === "Événement Play! Pokémon" ? event.venueName : event.title}</h1>
-        <p className="detailDate">{formatDate(event.startsAt)}</p>
+        <p className="detailDate">{formatDate(event.startsAt, event.allDay)}{event.allDay ? " · Horaire à confirmer" : ""}</p>
 
         <div className="detailGrid">
           <div className="detailBlock">

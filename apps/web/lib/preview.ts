@@ -5,6 +5,7 @@ export type PreviewEvent = {
   game: string;
   admission?: string | null;
   startsAt: string;
+  allDay?: boolean;
   publishedAt?: string | null;
   sourceUrl: string;
   venueKey: string;
@@ -323,12 +324,11 @@ export function toggleFavorite(key: string): string[] {
   return values;
 }
 
-export function formatDate(value: string) {
+export function formatDate(value: string, allDay = false) {
   return new Intl.DateTimeFormat("fr-FR", {
     weekday: "short",
     day: "numeric",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit"
+    ...(allDay ? {} : { hour: "2-digit", minute: "2-digit" })
   }).format(new Date(value));
 }

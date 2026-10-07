@@ -5,7 +5,14 @@ const DAYS = Number(process.env.PREVIEW_DAYS ?? 30);
 const MAX_PAGES = Number(process.env.PREVIEW_MAX_PAGES ?? 40);
 
 function dateOnly(date) {
-  return date.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const get = (key) => parts.find((part) => part.type === key)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
 function addDays(date, days) {
@@ -70,6 +77,7 @@ function normalize(row) {
   const leagueId = text(row, "league", "league_id") || null;
   const when = text(row, "Start_date", "when", "start_datetime", "event_date", "date");
   const date = sourceDate(when);
+  const allDay = !/[T ]\d{2}:\d{2}/.test(when);
   const rawLatitude = row.latitude ?? row.lat;
   const rawLongitude = row.longitude ?? row.lon ?? row.lng;
   const latitude = rawLatitude === "" || rawLatitude == null ? NaN : Number(rawLatitude);
@@ -85,6 +93,7 @@ function normalize(row) {
     game: normalizeGame(row, title),
     admission: text(row, "cost", "Cost", "Admission", "admission", "entry_fee", "entryFee") || null,
     startsAt: date.toISOString(),
+    allDay,
     publishedAt: text(row, "date_added", "created_at", "published_at") || null,
     sourceUrl: text(row, "pokemon_url", "Event_website", "url") || "https://play.pokemon.com/",
     venueKey: leagueId ? `league:${leagueId}` : `name:${venueName.toLowerCase()}`,
@@ -154,7 +163,8 @@ while (page < MAX_PAGES && hasMorePages) {
 
   for (const row of rows) {
     const item = normalize(row);
-    if (item && item.startsAt >= now.toISOString() && item.startsAt.slice(0, 10) <= end) events.push(item);
+    const eventDay = item ? dateOnly(new Date(item.startsAt)) : "";
+    if (item && eventDay >= start && eventDay <= end) events.push(item);
   }
 
   hasMorePages = rows.length === 100 && String(rows.at(-1)?.date ?? "") <= end;
