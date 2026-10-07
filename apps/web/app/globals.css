@@ -82,7 +82,8 @@ button:disabled { cursor: not-allowed; }
 .chip { color: #536d5c; font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .055em; }
 .chip.typeChip { color: var(--accent); }
 .chip.soft { padding-left: 7px; border-left: 1px solid #cdd5ce; color: #87948a; }
-.chip.admissionChip { color: #176b45; }
+.chip.admissionChip { display: inline-flex; align-items: center; gap: 5px; min-height: 25px; padding: 0 9px; border: 1px solid #b8dfca; border-radius: 6px; background: #eaf7ef; color: #176b45; font-size: 10px; letter-spacing: .035em; }
+.chip.admissionChip strong { color: #105b39; font-size: 12px; font-weight: 900; letter-spacing: -.02em; }
 .eventBody h3 { overflow: hidden; margin: 7px 0 4px; font-size: 15px; font-weight: 750; letter-spacing: -.015em; line-height: 1.27; text-overflow: ellipsis; white-space: nowrap; }
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; color: var(--muted); font-size: 12px; }
 .meta strong, .venueName { color: #45564a; font-weight: 700; }
