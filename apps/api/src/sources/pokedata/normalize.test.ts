@@ -54,6 +54,19 @@ test("normalizes nested venue data", () => {
   assert.equal(event.longitude, -1.6778);
 });
 
+test("maps the PokéData Cost field to the event admission price", () => {
+  const event = normalizePokeDataEvent({
+    guid: "cost-123",
+    name: "League Challenge de test",
+    date: "2026-11-01",
+    shop: "Boutique Test",
+    cost: "8€"
+  });
+
+  assert.ok(event);
+  assert.equal(event.admission, "8€");
+});
+
 test("recognizes French avant-première events from their title and identifies them as TCG", () => {
   const event = normalizePokeDataEvent({
     guid: "ap-123",
