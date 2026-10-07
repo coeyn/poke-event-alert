@@ -64,26 +64,15 @@ export function FirebaseAccount() {
     setMessage("");
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     try {
-      if (isMobile) {
-        await signInWithRedirect(firebaseAuth, provider);
-      } else {
-        await signInWithPopup(firebaseAuth, provider);
-      }
+      // GitHub Pages and Firebase Auth use different domains. On mobile,
+      // redirect auth can lose its state when the browser blocks third-party
+      // storage in Firebase's cross-origin helper iframe. Popup auth avoids it.
+      await signInWithPopup(firebaseAuth, provider);
     } catch (error) {
-      const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
-      if (!isMobile && code.includes("popup-blocked")) {
-        try {
-          await signInWithRedirect(firebaseAuth, provider);
-          return;
-        } catch (redirectError) {
-          setMessage(authErrorMessage(redirectError));
-        }
-      } else {
-        setMessage(authErrorMessage(error));
-      }
+      setMessage(authErrorMessage(error));
+    } finally {
       setBusy(false);
     }
   }
@@ -123,6 +112,9 @@ function authErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
   if (code.includes("unauthorized-domain")) return "Ce domaine n’est pas autorisé dans Firebase Authentication. Ajoute coeyn.github.io dans les domaines autorisés.";
   if (code.includes("popup-closed-by-user")) return "Connexion Google annulée.";
+  if (code.includes("popup-blocked")) return "Le navigateur a bloqué la fenêtre Google. Autorise les fenêtres pop-up pour ce site, puis réessaie.";
+  if (code.includes("web-storage-unsupported") || code.includes("operation-not-supported-in-this-environment")) return "La connexion Google n’est pas disponible dans ce navigateur intégré. Ouvre le site dans Chrome ou Safari, puis réessaie.";
+  if (code.includes("network-request-failed")) return "La connexion a échoué à cause du réseau. Vérifie ta connexion, puis réessaie.";
   if (code.includes("account-exists-with-different-credential")) return "Un compte existe déjà avec cette adresse. Connecte-toi d’abord avec ton autre méthode.";
   if (code.includes("operation-not-allowed")) return "Active la connexion Google dans Firebase Authentication.";
   return error instanceof Error ? error.message : "Connexion Google impossible. Réessaie.";
