@@ -104,7 +104,7 @@ function displayGame(value: string | null | undefined, title = "") {
   return value?.trim() || "Play!";
 }
 
-function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
+function mapApiEvent(event: ApiEvent, venueKey?: string, fallbackAdmission?: string | null): PreviewEvent | null {
   const venue = event.venue;
   if (!venue || !event.sourceEventId || !event.startsAt) return null;
 
@@ -123,7 +123,7 @@ function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
     title: event.title || "Événement Play! Pokémon",
     type: displayType(event.eventType, event.title),
     game: displayGame(event.game, event.title),
-    admission: event.admission ?? null,
+    admission: event.admission ?? fallbackAdmission ?? null,
     startsAt: event.startsAt,
     publishedAt: null,
     sourceUrl: event.sourceUrl || "https://play.pokemon.com/",
@@ -218,6 +218,9 @@ export async function refreshVenueLive(fallback: PreviewVenue): Promise<PreviewV
   if (!apiVenue) return fallback;
 
   const events: PreviewEvent[] = [];
+  const fallbackAdmissionById = new Map(
+    fallback.events.map((event) => [event.id, event.admission ?? null])
+  );
   const limit = 100;
   let offset = 0;
 
@@ -234,7 +237,11 @@ export async function refreshVenueLive(fallback: PreviewVenue): Promise<PreviewV
 
     const eventPayload = (await eventResponse.json()) as ApiPage<ApiEvent>;
     for (const event of eventPayload.items ?? []) {
-      const mapped = mapApiEvent(event, fallback.key);
+      const mapped = mapApiEvent(
+        event,
+        fallback.key,
+        fallbackAdmissionById.get(event.sourceEventId)
+      );
       if (mapped) events.push(mapped);
     }
 
