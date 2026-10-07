@@ -231,19 +231,45 @@ button:disabled { cursor: not-allowed; }
 .googleAuthButton:hover:not(:disabled) { background: #f8faf9; border-color: #c8d1cb; }
 .googleAuthButton:disabled { opacity: .65; }
 .googleAuthButton svg { width: 19px; height: 19px; }
-.communityCard { margin-top: 13px; }
-.communityField { display: grid; gap: 7px; margin: 12px 0; color: #45564a; font-size: 12px; font-weight: 750; }
+.communityWorkspace { display: grid; gap: 14px; margin-top: 14px; }
+.communityPanel { min-width: 0; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.communityPanelHead, .communitySectionHead { display: flex; align-items: center; gap: 12px; }
+.communityPanelHead h2, .communitySectionHead h2, .communitySignIn h2 { margin: 2px 0 0; font-size: 20px; letter-spacing: -.035em; }
+.communityPanelIcon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 auto; border-radius: 12px; background: #edf4ef; color: #19704d; font-size: 26px; }
+.communityEyebrow { color: #728278; font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.communityDescription, .communitySignIn p { margin: 13px 0 5px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.communityProfileGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 12px 0; }
+.communityField { display: grid; gap: 7px; min-width: 0; margin: 0; color: #45564a; font-size: 12px; font-weight: 750; }
 .communityField input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #cfd8d2; border-radius: 8px; background: #fff; color: var(--text); font-size: 14px; }
-.communityFriendForm { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin-top: 19px; padding-top: 9px; border-top: 1px solid var(--line); }
-.communityPeople { margin-top: 22px; }
-.communityPeople h3 { margin: 0 0 9px; font-size: 14px; }
-.communityPerson { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 57px; padding: 9px 0; border-top: 1px solid #edf0ee; }
-.communityPerson > span { display: grid; gap: 3px; min-width: 0; }
-.communityPerson strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; }
-.communityPerson small { color: var(--muted); font-size: 11px; }
-.communityPerson > div { display: flex; gap: 9px; flex: 0 0 auto; }
-.textButton { min-height: 40px; padding: 0 6px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 800; }
-.textButton:disabled { opacity: .55; }
+.communityField input:focus-visible { border-color: var(--blue); }
+.communityProfileFoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid #edf0ee; }
+.communityProfileFoot .secondaryButton { margin: 0; }
+.profileSaved, .profileIncomplete { color: #176b45; font-size: 11px; font-weight: 750; }
+.profileIncomplete { color: #9b6b22; }
+.communityMessage { margin: 11px 0 0; color: #176b45; font-size: 12px; line-height: 1.45; }
+.communitySectionHead { justify-content: space-between; }
+.friendCount { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 18px; background: #edf4ef; color: #176b45; font-size: 13px; font-weight: 850; }
+.friendSearchForm { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin: 16px 0 3px; padding: 14px; border: 1px solid #e5eae6; border-radius: 10px; background: #f8faf8; }
+.friendSearchForm .primaryButton { min-height: 46px; margin: 0; }
+.friendGroup { margin-top: 20px; }
+.friendGroup h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; }
+.friendGroup h3 span { color: #8b9890; font-size: 11px; }
+.friendRow { display: flex; align-items: center; gap: 11px; min-height: 62px; padding: 8px 0; border-top: 1px solid #edf0ee; }
+.friendAvatar { display: grid; place-items: center; width: 37px; height: 37px; flex: 0 0 auto; border: 1px solid #dce9df; border-radius: 50%; background: #eff6f1; color: #176b45; font-size: 14px; font-weight: 850; }
+.friendIdentity { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.friendIdentity strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.friendIdentity small { color: var(--muted); font-size: 11px; }
+.friendPending { padding: 5px 8px; border-radius: 12px; background: #f4f0e8; color: #846527; font-size: 10px; font-weight: 750; }
+.friendActions { display: flex; gap: 6px; flex: 0 0 auto; }
+.friendAccept, .friendRemove { min-height: 38px; padding: 0 10px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #8a5355; font: inherit; font-size: 11px; font-weight: 750; }
+.friendAccept { border-color: #c8e1d0; background: #edf7f0; color: #176b45; }
+.friendAccept:hover { background: #dff0e5; }
+.friendRemove:hover { background: #fff2f2; color: #b63d44; }
+.friendAccept:disabled, .friendRemove:disabled { opacity: .55; }
+.communityEmpty { display: grid; justify-items: center; gap: 7px; padding: 23px 12px 7px; color: var(--muted); text-align: center; }
+.communityEmpty > span { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 50%; background: #edf4ef; color: #176b45; font-size: 22px; }
+.communityEmpty strong { color: var(--text); font-size: 13px; }
+.communityEmpty p { max-width: 330px; margin: 0; font-size: 12px; line-height: 1.5; }
 .attendanceCard { padding: 20px; margin: 14px 0; border: 1px solid #d7e2db; border-radius: 11px; background: #f4f8f5; }
 .attendanceHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .attendanceHeader h2 { margin: 0; font-size: 19px; letter-spacing: -.03em; }
@@ -343,7 +369,13 @@ button:disabled { cursor: not-allowed; }
   .calendarAgenda { display: block; }
   .calendarToolbar h2 { font-size: 19px; }
   .detailGrid { grid-template-columns: 1fr; }
-  .communityFriendForm { grid-template-columns: 1fr; gap: 2px; }
+  .communityProfileGrid, .friendSearchForm { grid-template-columns: 1fr; }
+  .communityPanel { padding: 17px; }
+  .communityProfileFoot { align-items: stretch; flex-direction: column; }
+  .communityProfileFoot .secondaryButton { width: 100%; }
+  .friendSearchForm .primaryButton { width: 100%; }
+  .friendRow { gap: 8px; }
+  .friendActions { flex-direction: column; gap: 3px; }
   .navItem { font-size: 9px; }
   .navIcon { width: 18px; height: 18px; }
 }
