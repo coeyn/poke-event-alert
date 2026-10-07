@@ -29,4 +29,4 @@ Remplace `<ID_DU_PROJET>` par l’identifiant Firebase affiché dans les paramè
 
 ## 4. Variables du site GitHub Pages
 
-Pour activer Firebase sur le site publié, ajoute les six variables `NEXT_PUBLIC_FIREBASE_*` comme variables de dépôt GitHub dans **Settings → Secrets and variables → Actions → Variables**. Le workflow Pages les transmet déjà à la commande de build. Ces variables de configuration web sont publiques dans le navigateur ; les règles Firestore protègent les données. Ne publie pas `.env.local`.
+Pour activer Firebase sur le site publié, ajoute les sept variables `NEXT_PUBLIC_FIREBASE_*` comme variables de dépôt GitHub dans **Settings → Secrets and variables → Actions → Variables**. Le workflow Pages les transmet déjà à la commande de build et a les valeurs de ce projet en repli. Ces variables de configuration web sont publiques dans le navigateur ; les règles Firestore protègent les données. Ne publie pas `.env.local`.
