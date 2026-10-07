@@ -20,6 +20,7 @@ const EVENT_SELECT = `
     e.starts_at,
     e.ends_at,
     e.registration_url,
+    COALESCE(e.raw_payload->>'Admission', e.raw_payload->>'admission', e.raw_payload->>'entry_fee', e.raw_payload->>'entryFee') AS admission,
     e.source_url,
     e.status,
     e.missing_since,

@@ -3,6 +3,7 @@ export type PreviewEvent = {
   title: string;
   type: string;
   game: string;
+  admission?: string | null;
   startsAt: string;
   publishedAt?: string | null;
   sourceUrl: string;
@@ -53,6 +54,7 @@ type ApiEvent = {
   title: string;
   eventType?: string | null;
   game?: string | null;
+  admission?: string | null;
   startsAt: string;
   sourceUrl?: string | null;
   venue?: ApiVenue | null;
@@ -67,6 +69,13 @@ type ApiPage<T> = {
     hasMore: boolean;
   };
 };
+
+export function formatAdmission(value: string | null | undefined): string | null {
+  const admission = value?.trim();
+  if (!admission) return null;
+  if (/\b(eur|euros?)\b|€|gratuit|free/i.test(admission)) return admission;
+  return `${admission} €`;
+}
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
@@ -114,6 +123,7 @@ function mapApiEvent(event: ApiEvent, venueKey?: string): PreviewEvent | null {
     title: event.title || "Événement Play! Pokémon",
     type: displayType(event.eventType, event.title),
     game: displayGame(event.game, event.title),
+    admission: event.admission ?? null,
     startsAt: event.startsAt,
     publishedAt: null,
     sourceUrl: event.sourceUrl || "https://play.pokemon.com/",
@@ -143,7 +153,8 @@ export async function loadUpcomingSnapshot(): Promise<PreviewData> {
     events: payload.events.map((event) => ({
       ...event,
       type: displayType(event.type, event.title),
-      game: displayGame(event.game, event.title)
+      game: displayGame(event.game, event.title),
+      admission: event.admission ?? null
     }))
   };
 }

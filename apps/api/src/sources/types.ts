@@ -16,6 +16,7 @@ export type SourceEvent = {
   longitude?: number;
   eventType?: string;
   game?: string;
+  admission?: string;
   registrationUrl?: string;
   raw: unknown;
 };

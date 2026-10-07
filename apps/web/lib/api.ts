@@ -21,6 +21,7 @@ export type EventItem = {
   title: string;
   eventType?: string | null;
   game?: string | null;
+  admission?: string | null;
   startsAt: string;
   endsAt?: string | null;
   registrationUrl?: string | null;

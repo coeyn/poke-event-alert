@@ -14,6 +14,7 @@ test("normalizes a flat PokéData-like event", () => {
     country_code: "FR",
     event_type: "TCG Challenge",
     game: "TCG",
+    Admission: "10",
     registration_url: "https://example.test/register"
   });
 
@@ -25,6 +26,7 @@ test("normalizes a flat PokéData-like event", () => {
   assert.equal(event.leagueId, "26029062");
   assert.equal(event.eventType, "challenge");
   assert.equal(event.game, "tcg");
+  assert.equal(event.admission, "10");
 });
 
 test("normalizes nested venue data", () => {

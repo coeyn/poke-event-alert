@@ -9,6 +9,7 @@ export type EventSnapshot = {
   registrationUrl: string | null;
   eventType: string | null;
   game: string | null;
+  admission: string | null;
   venue: {
     sourceVenueId: string | null;
     leagueId: string | null;
@@ -39,6 +40,7 @@ export function eventSnapshot(event: SourceEvent): EventSnapshot {
     registrationUrl: event.registrationUrl ?? null,
     eventType: event.eventType ?? null,
     game: event.game ?? null,
+    admission: event.admission ?? null,
     venue: {
       sourceVenueId: event.sourceVenueId ?? null,
       leagueId: event.leagueId ?? null,

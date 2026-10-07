@@ -90,6 +90,7 @@ export function mapEvent(row: Record<string, unknown>) {
     startsAt: iso(row.starts_at),
     endsAt: iso(row.ends_at),
     registrationUrl: row.registration_url,
+    admission: row.admission,
     sourceUrl: row.source_url,
     status: row.status,
     missingSince: iso(row.missing_since),

@@ -182,6 +182,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
     "Third_party_registration_website",
     "registration"
   ]);
+  const admission = stringValue(record, ["Admission", "admission", "entry_fee", "entryFee"]);
 
   const event: SourceEvent = {
     source: "pokedata",
@@ -290,6 +291,7 @@ export function normalizePokeDataEvent(input: unknown): SourceEvent | undefined 
   if (game) event.game = game;
 
   if (registrationUrl) event.registrationUrl = registrationUrl;
+  if (admission) event.admission = admission;
 
   return event;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { type PreviewEvent } from "../lib/preview";
+import { formatAdmission, type PreviewEvent } from "../lib/preview";
 import { EventTypeMark } from "./EventTypeMark";
 
 export function EventCard({ event }: { event: PreviewEvent }) {
@@ -17,6 +17,7 @@ export function EventCard({ event }: { event: PreviewEvent }) {
         <div className="chips">
           <span className="chip typeChip">{event.type}</span>
           <span className="chip soft">{event.game}</span>
+          {formatAdmission(event.admission) && <span className="chip admissionChip">PAF · {formatAdmission(event.admission)}</span>}
         </div>
         <h3>{genericTitle ? event.venueName : event.title}</h3>
         <p className="meta">{!genericTitle && <><span className="venueName">{event.venueName}</span><span aria-hidden="true">·</span></>}{event.city || event.address || "France"}<span aria-hidden="true">·</span><strong>{time}</strong></p>

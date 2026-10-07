@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   formatDate,
+  formatAdmission,
   loadUpcomingFrance,
   readFavorites,
   toggleFavorite,
@@ -119,6 +120,10 @@ export default function TournamentPage() {
             <span>Lieu</span>
             <strong>{event.city || "France"}</strong>
             {event.address && <small>{event.address}</small>}
+          </div>
+          <div className="detailBlock">
+            <span>PAF</span>
+            <strong>{formatAdmission(event.admission) ?? "Non communiqué"}</strong>
           </div>
         </div>
 
