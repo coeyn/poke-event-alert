@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
-const API = "https://pokedata.ovh/events/apiv2";
+const API = "https://www.pokedata.ovh/events/tableapi/index_table.php";
 const DAYS = Number(process.env.PREVIEW_DAYS ?? 30);
 const MAX_PAGES = Number(process.env.PREVIEW_MAX_PAGES ?? 40);
 
@@ -101,37 +101,69 @@ function normalize(row) {
 const now = new Date();
 const start = dateOnly(now);
 const end = dateOnly(addDays(now, DAYS));
-const base = `${API}/_country/FR/_start/${start}/_end/${end}`;
-
 const events = [];
-let page = 1;
-let totalPages = 1;
+let page = 0;
+let hasMorePages = true;
 
-do {
-  const url = page === 1 ? base : `${base}/_page/${page}`;
-  console.log(`Fetch ${url}`);
+while (page < MAX_PAGES && hasMorePages) {
+  console.log(`Fetch PokéData table page ${page + 1}`);
 
-  const response = await fetch(url, {
+  const response = await fetch(API, {
+    method: "POST",
     headers: {
       accept: "application/json",
+      "content-type": "application/json",
       "user-agent": "poke-event-alert-preview/0.1"
-    }
+    },
+    body: JSON.stringify({
+      page,
+      past: false,
+      country: "FR",
+      city: "",
+      shop: "",
+      league: "",
+      states: "[]",
+      postcode: "",
+      cups: true,
+      challenges: true,
+      vcups: true,
+      vchallenges: true,
+      prereleases: true,
+      premier: true,
+      go: true,
+      gocup: true,
+      mss: true,
+      ftcg: true,
+      fvg: true,
+      fgo: true,
+      latitude: 0,
+      longitude: 0,
+      radius: 0,
+      unit: "km",
+      width: 1200
+    })
   });
 
   if (!response.ok) {
     throw new Error(`PokéData HTTP ${response.status} on page ${page}`);
   }
 
-  const payload = await response.json();
-  totalPages = Math.min(payload.metadata?.total_pages ?? 1, MAX_PAGES);
+  const rows = await response.json();
+  if (!Array.isArray(rows)) throw new Error("PokéData table returned an invalid event list");
+  if (rows.length === 0) break;
 
-  for (const row of payload.events ?? []) {
+  for (const row of rows) {
     const item = normalize(row);
     if (item && item.startsAt >= now.toISOString() && item.startsAt.slice(0, 10) <= end) events.push(item);
   }
 
+  hasMorePages = rows.length === 100 && String(rows.at(-1)?.date ?? "") <= end;
   page += 1;
-} while (page <= totalPages);
+}
+
+if (hasMorePages && page >= MAX_PAGES) {
+  console.warn(`Stopped after MAX_PAGES=${MAX_PAGES}; remaining PokéData pages were outside the preview window or not fetched.`);
+}
 
 const unique = Array.from(new Map(events.map((event) => [event.id, event])).values())
   .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
