@@ -204,7 +204,6 @@ export function HomeDashboard() {
           <span className="followedShopIcon"><ShopIcon /></span>
           <span className="followedShopName"><strong>{venue.name}</strong><small>{venue.city || "France"}</small></span>
           {hasRecentEvents(venue) && <span className="venueNewDot" role="img" aria-label="Nouveaux événements ajoutés cette semaine" title="Nouveaux événements cette semaine" />}
-          <span className="followedShopArrow" aria-hidden="true">›</span>
         </Link>)}
       </div> : <div className="homeEmptyFollow"><span>Tu ne suis pas encore de boutique.</span><Link href="/boutiques/">Découvrir les boutiques →</Link></div>}
     </section>

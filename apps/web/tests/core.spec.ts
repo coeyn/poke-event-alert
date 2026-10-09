@@ -134,6 +134,28 @@ test("home does not fill event categories with shops outside the discovery radiu
   await expect(page.locator(".homeEventVenue")).toContainText("Rennes");
 });
 
+test("followed shop cards stack logo, name, and city from top to bottom", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("poke-event-alert:preview-favorites", JSON.stringify(["league:1001"]));
+  });
+  await page.goto("/");
+  const shop = page.locator(".followedShop").first();
+
+  await expect(shop).toBeVisible();
+  await expect(shop.locator(".followedShopIcon")).toBeVisible();
+  await expect(shop.locator(".followedShopName strong")).toHaveText("Boutique Démo");
+  await expect(shop.locator(".followedShopName small")).toHaveText("Rennes");
+  expect(await shop.evaluate((element) => getComputedStyle(element).flexDirection)).toBe("column");
+  const positions = await shop.evaluate((element) => {
+    const logo = element.querySelector(".followedShopIcon")!.getBoundingClientRect();
+    const name = element.querySelector(".followedShopName strong")!.getBoundingClientRect();
+    const city = element.querySelector(".followedShopName small")!.getBoundingClientRect();
+    return [logo.top, name.top, city.top];
+  });
+  expect(positions[0]).toBeLessThan(positions[1]);
+  expect(positions[1]).toBeLessThan(positions[2]);
+});
+
 test("detail return links go back to the page that opened them", async ({ page }) => {
   await page.goto("/");
   await page.locator(".homeEventCard").first().click();
