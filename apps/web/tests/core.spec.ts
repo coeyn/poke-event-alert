@@ -71,6 +71,13 @@ test("home presents the requested sections and keeps mobile navigation at the bo
 });
 
 test("home and Explorer find, open, follow, and unfollow a shop", async ({ page }) => {
+  let followPostContentType: string | undefined;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.includes("/follows/")) {
+      followPostContentType = request.headers()["content-type"];
+    }
+  });
+
   await page.goto("/");
   await expect(page.getByText("League Challenge moins chère")).toBeVisible();
   await page.getByRole("link", { name: "Explorer", exact: true }).click();
@@ -80,6 +87,7 @@ test("home and Explorer find, open, follow, and unfollow a shop", async ({ page 
   await expect(shop).toBeVisible();
   await shop.getByRole("button", { name: "Suivre Boutique Démo" }).click();
   await expect(shop.getByRole("button", { name: "Ne plus suivre Boutique Démo" })).toBeVisible();
+  expect(followPostContentType).toBeUndefined();
   await shop.getByRole("link", { name: /Voir la boutique/ }).click();
   await expect(page.getByRole("heading", { name: "Boutique Démo" })).toBeVisible();
   await page.goto("/explorer/");
