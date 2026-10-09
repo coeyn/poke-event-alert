@@ -73,16 +73,6 @@ function ShopIcon() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M9 20v-6h6v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
-function BrandMark() {
-  return <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-    <circle cx="24" cy="24" r="21" fill="#F8FBFF" stroke="#1769D2" strokeWidth="2.5" />
-    <path d="M4.4 19.5h39.2a21 21 0 0 1 0 9H4.4a21 21 0 0 1 0-9Z" fill="#14243D" />
-    <path d="M5.3 19.5A21 21 0 0 1 42.7 19.5H5.3Z" fill="#E33C4C" />
-    <circle cx="24" cy="24" r="6.5" fill="#F8FBFF" stroke="#14243D" strokeWidth="2.5" />
-    <circle cx="24" cy="24" r="2.5" fill="#1769D2" />
-  </svg>;
-}
-
 export function HomeDashboard() {
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -192,9 +182,7 @@ export function HomeDashboard() {
 
   return <div className="homeDashboard">
     <header className="homeBrand" aria-label="Poké Event Alert">
-      <span className="homeBrandMark"><BrandMark /></span>
-      <span className="homeBrandText"><h1>Poké <em>Event</em> Alert</h1><small>Les événements Play! Pokémon près de chez toi</small></span>
-      <span className="homeBrandSignal" aria-hidden="true"><i /></span>
+      <Image className="homeBrandLogo" src={`${BASE_PATH}/logo-poke-event-alert.png`} alt="Poké Event Alert — Tous les événements JCC, VGC, GO et Unité" width={2172} height={724} unoptimized loading="eager" />
     </header>
 
     <section className="homeSection homeFollowed" aria-labelledby="home-followed-heading">

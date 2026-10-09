@@ -38,7 +38,7 @@ test("home presents the requested sections and keeps mobile navigation at the bo
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Poké Event Alert" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Poké Event Alert/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Boutiques suivies" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "À venir" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Boutique mise en avant" })).toBeVisible();
@@ -161,12 +161,12 @@ test("detail return links go back to the page that opened them", async ({ page }
   await page.locator(".homeEventCard").first().click();
   await expect(page.getByRole("heading", { name: "League Cup de test" })).toBeVisible();
   await page.getByRole("link", { name: "← Retour" }).click();
-  await expect(page.getByRole("heading", { name: "Poké Event Alert" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Poké Event Alert/ })).toBeVisible();
 
   await page.getByRole("link", { name: "Voir la boutique" }).click();
   await expect(page.getByRole("heading", { name: "Boutique Démo" })).toBeVisible();
   await page.getByRole("link", { name: "← Retour" }).click();
-  await expect(page.getByRole("heading", { name: "Poké Event Alert" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Poké Event Alert/ })).toBeVisible();
 });
 
 test("opens an event and calendar, with static data when the API is unavailable", async ({ page }) => {
