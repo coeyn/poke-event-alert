@@ -154,13 +154,11 @@ export function HomeDashboard() {
     localStorage.setItem(FEATURED_VENUE_KEY, initial.key);
   }, [venues, favorites, featuredKey]);
 
-  const recentFeaturedEvents = useMemo(() => {
+  const upcomingFeaturedEvents = useMemo(() => {
     if (!featuredVenue) return [];
-    const cutoff = recentCutoff();
     return featuredVenue.events
-      .filter((event) => event.publishedAt && event.publishedAt.slice(0, 10) >= cutoff)
-      .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))
-      .slice(0, 3);
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+      .slice(0, 5);
   }, [featuredVenue]);
 
   const hasRecentEvents = (venue: PreviewVenue) => {
@@ -237,15 +235,15 @@ export function HomeDashboard() {
           <button className={favorites.includes(featuredVenue.key) ? "spotlightFollow followed" : "spotlightFollow"} type="button" onClick={() => void toggleFeaturedFollow(featuredVenue)}>{favorites.includes(featuredVenue.key) ? "✓ Suivie" : "+ Suivre"}</button>
         </div>
         {followError && <p className="spotlightError" role="status">{followError}</p>}
-        <div className="spotlightEventsHead"><strong>Événements récents</strong><Link href={`/boutique/?key=${encodeURIComponent(featuredVenue.key)}`}>Voir la boutique →</Link></div>
-        {recentFeaturedEvents.length ? <div className="spotlightEventList">
-          {recentFeaturedEvents.map((event) => <Link className="spotlightEvent" key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
+        <div className="spotlightEventsHead"><strong>Prochains événements</strong><Link href={`/boutique/?key=${encodeURIComponent(featuredVenue.key)}`}>Voir la boutique →</Link></div>
+        {upcomingFeaturedEvents.length ? <div className="spotlightEventList">
+          {upcomingFeaturedEvents.map((event) => <Link className="spotlightEvent" key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
             <EventTypeMark type={event.type} game={event.game} size="small" />
             <span className="spotlightEventCopy"><strong>{displayTitle(event)}</strong><small>{event.type} · {eventDate(event)}</small></span>
             {formatAdmission(event.admission) && <span className="homeEventPrice">{formatAdmission(event.admission)}</span>}
             <span className="spotlightEventArrow" aria-hidden="true">›</span>
           </Link>)}
-        </div> : <p className="spotlightNoEvents">Pas de nouvel événement publié cette semaine. <Link href={`/boutique/?key=${encodeURIComponent(featuredVenue.key)}`}>Voir tous les événements</Link></p>}
+        </div> : <p className="spotlightNoEvents">Aucun événement à venir pour le moment. <Link href={`/boutique/?key=${encodeURIComponent(featuredVenue.key)}`}>Voir la boutique</Link></p>}
       </div> : <div className="homeEmptyFollow"><span>Aucune boutique disponible pour le moment.</span><Link href="/boutiques/">Trouver une boutique →</Link></div>}
     </section>
   </div>;

@@ -42,6 +42,8 @@ test("home presents the requested sections and keeps mobile navigation at the bo
   await expect(page.getByRole("heading", { name: "Boutiques suivies" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "À venir" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Boutique mise en avant" })).toBeVisible();
+  await expect(page.locator(".spotlightEventCopy")).toHaveCount(5);
+  await expect(page.locator(".spotlightEventCopy").filter({ hasText: "Session Play gratuite" })).toBeVisible();
 
   const sections = await page.locator(".homeSection").evaluateAll((items) => items.map((item) => item.getBoundingClientRect().top));
   expect(sections[0]).toBeLessThan(sections[1]);
