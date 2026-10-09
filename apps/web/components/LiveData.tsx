@@ -132,11 +132,9 @@ export function LiveData({ mode, sectionTitle, showHeading = true }: { mode: Mod
     try {
       await syncVenueFollow(venue, !wasFollowed);
     } catch (syncError) {
-      setFavorites(toggleFavorite(venue.key));
+      const detail = syncError instanceof Error ? ` (${syncError.message})` : "";
       setFollowError(
-        syncError instanceof Error
-          ? syncError.message
-          : "Impossible de synchroniser cette boutique avec le serveur."
+        `Boutique ${wasFollowed ? "retirée des favoris" : "ajoutée aux favoris"} sur cet appareil, mais la synchronisation serveur a échoué${detail}`
       );
     }
   }

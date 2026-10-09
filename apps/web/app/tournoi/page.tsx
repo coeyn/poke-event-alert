@@ -71,12 +71,9 @@ export default function TournamentPage() {
         nextFollowed
       );
     } catch (error) {
-      const rolledBack = toggleFavorite(event!.venueKey);
-      setFollowed(rolledBack.includes(event!.venueKey));
+      const detail = error instanceof Error ? ` (${error.message})` : "";
       setFollowError(
-        error instanceof Error
-          ? error.message
-          : "Impossible de synchroniser la boutique avec le serveur."
+        `Boutique ${nextFollowed ? "ajoutée aux favoris" : "retirée des favoris"} sur cet appareil, mais la synchronisation serveur a échoué${detail}`
       );
     }
   }

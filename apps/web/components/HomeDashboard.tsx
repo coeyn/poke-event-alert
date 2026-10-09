@@ -14,7 +14,7 @@ import {
   type PreviewEvent,
   type PreviewVenue
 } from "../lib/preview";
-import { matchesEventType, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { DEFAULT_SETTINGS, isPersonalEvent, matchesEventType, readLocalSettings, type LocalSettings } from "../lib/local-settings";
 import { eventCategory } from "../lib/event-category";
 import { readBlockedVenues } from "../lib/blocked-venues";
 import { syncVenueFollow } from "../lib/follows";
@@ -126,10 +126,12 @@ export function HomeDashboard() {
           const type = eventCategory(event.type);
           return category === "session" ? type === "session" || type === "friendly" : type === category;
         })
-        .sort((a, b) => eventPrice(a) - eventPrice(b) || a.startsAt.localeCompare(b.startsAt));
-      return candidates.slice(0, 1);
+      const personalCandidates = candidates.filter((event) => isPersonalEvent(event, favorites, settings ?? DEFAULT_SETTINGS));
+      const preferred = personalCandidates.length ? personalCandidates : candidates;
+      preferred.sort((a, b) => eventPrice(a) - eventPrice(b) || a.startsAt.localeCompare(b.startsAt));
+      return preferred.slice(0, 1);
     });
-  }, [visibleEvents, settings]);
+  }, [visibleEvents, settings, favorites]);
   const shops = useMemo(
     () => favorites
       .map((key) => venues.find((venue) => venue.key === key))
@@ -178,11 +180,8 @@ export function HomeDashboard() {
     try {
       await syncVenueFollow(venue, !wasFollowed);
     } catch (followFailure) {
-      const restored = toggleFavorite(venue.key);
-      setFavorites(restored);
-      setFollowError(followFailure instanceof Error
-        ? followFailure.message
-        : "Impossible de mettre à jour cette boutique.");
+      const detail = followFailure instanceof Error ? ` (${followFailure.message})` : "";
+      setFollowError(`Boutique ${wasFollowed ? "retirée des favoris" : "ajoutée aux favoris"} sur cet appareil, mais la synchronisation serveur a échoué${detail}`);
     }
   }
 

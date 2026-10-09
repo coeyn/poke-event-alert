@@ -18,7 +18,7 @@ const fixture = {
     { id: "e2e-challenge-cheap", title: "League Challenge moins chère", type: "Challenge", game: "JCC", admission: "5€", startsAt: daysFromNow(10), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
     { id: "e2e-prerelease", title: "Avant-première de test", type: "Avant-première", game: "JCC", admission: "10€", startsAt: daysFromNow(7), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
     { id: "e2e-session", title: "Session Play gratuite", type: "Session Play", game: "JCC", admission: "Gratuit", startsAt: daysFromNow(8), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
-    { id: "e2e-session-paid", title: "Session Play payante", type: "Session Play", game: "JCC", admission: "4€", startsAt: daysFromNow(4), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" }
+    { id: "e2e-session-paid", title: "Session Play payante", type: "Session Play", game: "JCC", admission: "4€", startsAt: daysFromNow(4), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR", latitude: 48.11, longitude: -1.68 }
   ]
 };
 
@@ -87,6 +87,28 @@ test("home and Explorer find, open, follow, and unfollow a shop", async ({ page 
   const followed = page.locator(".venueCard", { hasText: "Boutique Démo" });
   await followed.getByRole("button", { name: "Ne plus suivre Boutique Démo" }).click();
   await expect(followed.getByRole("button", { name: "Suivre Boutique Démo" })).toBeVisible();
+});
+
+test("home keeps nearby events and local favorites when API sync fails", async ({ page }) => {
+  await page.route("http://127.0.0.1:3999/users/e2e-user/follows/**", (route) => route.abort());
+  await page.addInitScript(() => {
+    localStorage.setItem("poke-event-alert:preview-settings", JSON.stringify({
+      discoveryRadiusKm: 10,
+      location: { latitude: 48.11, longitude: -1.68 }
+    }));
+  });
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/");
+  await expect(page.locator(".homeUpcoming")).toContainText("Session Play payante");
+
+  await page.getByRole("link", { name: "Explorer", exact: true }).click();
+  await page.getByRole("tab", { name: /Boutiques/ }).click();
+  await page.getByRole("textbox", { name: /Rechercher un événement ou une boutique/ }).fill("Rennes");
+  const shop = page.locator(".venueCard", { hasText: "Boutique Démo" }).first();
+  await shop.getByRole("button", { name: "Suivre Boutique Démo" }).click();
+  await expect(shop.getByRole("button", { name: "Ne plus suivre Boutique Démo" })).toBeVisible();
+  await expect(page.locator(".notice.error")).toContainText("ajoutée aux favoris sur cet appareil");
+  expect(await page.evaluate(() => localStorage.getItem("poke-event-alert:preview-favorites"))).toContain("league:1001");
 });
 
 test("opens an event and calendar, with static data when the API is unavailable", async ({ page }) => {

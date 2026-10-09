@@ -73,12 +73,9 @@ export default function BoutiquePage() {
     try {
       await syncVenueFollow(venue!, nextFollowed);
     } catch (error) {
-      const rolledBack = toggleFavorite(venue!.key);
-      setFollowed(rolledBack.includes(venue!.key));
+      const detail = error instanceof Error ? ` (${error.message})` : "";
       setFollowError(
-        error instanceof Error
-          ? error.message
-          : "Impossible de synchroniser la boutique avec le serveur."
+        `Boutique ${nextFollowed ? "ajoutée aux favoris" : "retirée des favoris"} sur cet appareil, mais la synchronisation serveur a échoué${detail}`
       );
     }
   }
