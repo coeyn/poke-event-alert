@@ -516,7 +516,7 @@ button:disabled { cursor: not-allowed; }
   .bottomNav { top: auto; right: 0; bottom: 0; left: 0; border-radius: 18px 18px 0 0; border-bottom: 0; box-shadow: 0 -7px 24px #244b7414; }
   .navItem { min-height: 55px; }
   .navItem.active { box-shadow: inset 0 3px #2074df; }
-  .homeUpcomingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .homeUpcomingGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   body { background-size: auto, 26px 26px, 26px 26px, auto; }
@@ -534,17 +534,18 @@ button:disabled { cursor: not-allowed; }
   .followedShopName strong { font-size: 10px; }
   .followedShopName small { font-size: 9px; }
   .followedShopArrow { font-size: 19px; }
-  .homeUpcomingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; overflow: hidden; }
-  .homeEventCard { min-height: 238px; padding-bottom: 10px; }
-  .homeEventArtwork { height: 100px; }
+  .homeUpcomingGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; overflow: hidden; }
+  .homeEventCard { min-height: 222px; padding-bottom: 9px; gap: 6px; }
+  .homeEventArtwork { height: 78px; }
   .homeEventArtwork img { padding: 7px 8px 0; }
-  .homeEventTop { gap: 4px; padding-right: 8px; padding-left: 8px; }
-  .homeEventTop .eventTypeMark.small { width: 29px; height: 29px; flex: 0 0 auto; }
-  .homeEventType { font-size: 8px; letter-spacing: .025em; }
-  .homeEventDate, .homeEventTitle, .homeEventVenue { padding-right: 9px; padding-left: 9px; }
-  .homeEventTitle { font-size: 12px; }
-  .homeEventDate, .homeEventVenue { font-size: 9px; }
-  .homeEventPrice { margin-right: 9px; margin-left: 9px; }
+  .homeEventTop { gap: 3px; padding-right: 6px; padding-left: 6px; }
+  .homeEventTop .eventTypeMark.small { width: 24px; height: 24px; flex: 0 0 auto; }
+  .homeEventType { min-width: 0; overflow: hidden; font-size: 7px; letter-spacing: 0; text-overflow: ellipsis; white-space: nowrap; }
+  .homeEventDate, .homeEventTitle, .homeEventVenue { padding-right: 7px; padding-left: 7px; }
+  .homeEventTitle { font-size: 10px; }
+  .homeEventDate, .homeEventVenue { font-size: 8px; }
+  .homeEventDay { top: 6px; left: 5px; padding: 4px 5px; font-size: 7px; }
+  .homeEventPrice { min-height: 20px; margin-right: 7px; margin-left: 7px; padding: 0 6px; font-size: 9px; }
   .homeEmptyFollow { align-items: flex-start; flex-direction: column; }
   .spotlightShopHead { gap: 10px; min-height: 98px; padding: 13px; }
   .spotlightShopIcon { width: 46px; height: 46px; }
@@ -560,4 +561,4 @@ button:disabled { cursor: not-allowed; }
   .spotlightEvent .homeEventPrice { padding: 0 6px; font-size: 9px; }
   .navItem { border-radius: 11px; }
 }
-@media (max-width: 380px) { .followedShopList { grid-template-columns: 1fr; } .homeUpcomingGrid { gap: 7px; } .homeEventCard { min-height: 226px; } .homeEventArtwork { height: 88px; } }
+@media (max-width: 380px) { .followedShopList { grid-template-columns: 1fr; } .homeUpcomingGrid { gap: 5px; } .homeEventCard { min-height: 215px; } .homeEventArtwork { height: 68px; } }

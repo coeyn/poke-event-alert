@@ -14,13 +14,15 @@ import {
   type PreviewEvent,
   type PreviewVenue
 } from "../lib/preview";
-import { isPersonalEvent, matchesEventType, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { matchesEventType, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { eventCategory } from "../lib/event-category";
 import { readBlockedVenues } from "../lib/blocked-venues";
 import { syncVenueFollow } from "../lib/follows";
 
 const FEATURED_VENUE_KEY = "poke-event-alert:featured-venue";
 const RECENT_DAYS = 7;
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const UPCOMING_CATEGORY_PRIORITY = ["cup", "challenge", "prerelease", "session"] as const;
 
 function recentCutoff() {
   const date = new Date();
@@ -58,6 +60,13 @@ function eventDayLabel(event: PreviewEvent) {
   if (sameDay(eventDay, today)) return "Aujourd’hui";
   if (sameDay(eventDay, tomorrow)) return "Demain";
   return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(eventDay);
+}
+
+function eventPrice(event: PreviewEvent) {
+  const admission = event.admission?.trim().toLocaleLowerCase("fr-FR") ?? "";
+  if (/^(gratuit|free)$/.test(admission)) return 0;
+  const amount = admission.match(/\d+(?:[.,]\d+)?/);
+  return amount ? Number(amount[0].replace(",", ".")) : Number.POSITIVE_INFINITY;
 }
 
 function ShopIcon() {
@@ -109,20 +118,18 @@ export function HomeDashboard() {
     [events, blockedKeys]
   );
   const venues = useMemo(() => venuesFromEvents(visibleEvents), [visibleEvents]);
-  const personalizedEvents = useMemo(
-    () => settings
-      ? visibleEvents.filter((event) => isPersonalEvent(event, favorites, settings))
-      : [],
-    [visibleEvents, favorites, settings]
-  );
   const upcomingEvents = useMemo(() => {
-    const priority = [...personalizedEvents].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-    const selected = new Set(priority.map((event) => event.id));
-    const rest = visibleEvents
-      .filter((event) => !selected.has(event.id) && (!settings || matchesEventType(event.type, settings)))
-      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-    return [...priority, ...rest].slice(0, 4);
-  }, [personalizedEvents, visibleEvents, settings]);
+    const eligible = visibleEvents.filter((event) => !settings || matchesEventType(event.type, settings));
+    return UPCOMING_CATEGORY_PRIORITY.flatMap((category) => {
+      const candidates = eligible
+        .filter((event) => {
+          const type = eventCategory(event.type);
+          return category === "session" ? type === "session" || type === "friendly" : type === category;
+        })
+        .sort((a, b) => eventPrice(a) - eventPrice(b) || a.startsAt.localeCompare(b.startsAt));
+      return candidates.slice(0, 1);
+    });
+  }, [visibleEvents, settings]);
   const shops = useMemo(
     () => favorites
       .map((key) => venues.find((venue) => venue.key === key))

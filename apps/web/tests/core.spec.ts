@@ -10,10 +10,15 @@ const daysFromNow = (days: number) => {
 const fixture = {
   generatedAt: new Date().toISOString(),
   scope: { country: "FR", start: "2026-01-01", end: "2027-12-31", days: 30 },
-  count: 2,
+  count: 7,
   events: [
     { id: "e2e-challenge", title: "League Challenge de test", type: "Challenge", game: "JCC", admission: "8€", startsAt: daysFromNow(5), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
-    { id: "e2e-cup", title: "League Cup de test", type: "Cup", game: "JCC", admission: "0", startsAt: daysFromNow(12), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" }
+    { id: "e2e-cup", title: "League Cup de test", type: "Cup", game: "JCC", admission: "0", startsAt: daysFromNow(12), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
+    { id: "e2e-cup-expensive", title: "League Cup chère", type: "Cup", game: "JCC", admission: "12€", startsAt: daysFromNow(2), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
+    { id: "e2e-challenge-cheap", title: "League Challenge moins chère", type: "Challenge", game: "JCC", admission: "5€", startsAt: daysFromNow(10), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
+    { id: "e2e-prerelease", title: "Avant-première de test", type: "Avant-première", game: "JCC", admission: "10€", startsAt: daysFromNow(7), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
+    { id: "e2e-session", title: "Session Play gratuite", type: "Session Play", game: "JCC", admission: "Gratuit", startsAt: daysFromNow(8), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" },
+    { id: "e2e-session-paid", title: "Session Play payante", type: "Session Play", game: "JCC", admission: "4€", startsAt: daysFromNow(4), sourceUrl: "https://play.pokemon.com/", venueKey: "league:1001", venueName: "Boutique Démo", leagueId: "1001", city: "Rennes", address: "1 rue Test", countryCode: "FR" }
   ]
 };
 
@@ -42,8 +47,18 @@ test("home presents the requested sections and keeps mobile navigation at the bo
   expect(sections[0]).toBeLessThan(sections[1]);
   expect(sections[1]).toBeLessThan(sections[2]);
 
-  await expect(page.locator(".homeEventArtwork img")).toHaveCount(2);
+  await expect(page.locator(".homeEventArtwork img")).toHaveCount(4);
+  await expect(page.locator(".homeEventTitle")).toHaveText([
+    "League Cup de test",
+    "League Challenge moins chère",
+    "Avant-première de test",
+    "Session Play gratuite"
+  ]);
   expect(await page.locator("body").evaluate((body) => body.scrollWidth)).toBeLessThanOrEqual(390);
+  const upcomingCards = await page.locator(".homeEventCard").evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect()));
+  expect(upcomingCards[0].x).toBeLessThan(upcomingCards[1].x);
+  expect(upcomingCards[2].y).toBe(upcomingCards[0].y);
+  expect(upcomingCards[3].y).toBeGreaterThan(upcomingCards[0].y);
 
   const nav = await page.locator(".bottomNav").boundingBox();
   expect(nav).not.toBeNull();
@@ -53,7 +68,7 @@ test("home presents the requested sections and keeps mobile navigation at the bo
 
 test("home and Explorer find, open, follow, and unfollow a shop", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("League Challenge de test")).toBeVisible();
+  await expect(page.getByText("League Challenge moins chère")).toBeVisible();
   await page.getByRole("link", { name: "Explorer", exact: true }).click();
   await page.getByRole("tab", { name: /Boutiques/ }).click();
   await page.getByRole("textbox", { name: /Rechercher un événement ou une boutique/ }).fill("Rennes");
