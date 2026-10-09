@@ -199,6 +199,38 @@ test("ingestion is idempotent and detects updated/missing events", async () => {
     after: "Event one — nouvelle heure"
   });
 
+  const nearbyUser = await pool.query<{ id: string }>(
+    "INSERT INTO users (display_name) VALUES ('Nearby Push Tester') RETURNING id"
+  );
+  const nearbyUserId = nearbyUser.rows[0]!.id;
+  await pool.query(
+    `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+     VALUES ($1::uuid,$2,$3,$4)`,
+    [nearbyUserId, "https://push.example.test/nearby", "p256dh", "auth"]
+  );
+  await pool.query(
+    `INSERT INTO notification_preferences (
+       user_id, discovery_latitude, discovery_longitude, discovery_radius_km
+     ) VALUES ($1::uuid, 48.514, -2.765, 25)`,
+    [nearbyUserId]
+  );
+
+  const distantUser = await pool.query<{ id: string }>(
+    "INSERT INTO users (display_name) VALUES ('Distant Push Tester') RETURNING id"
+  );
+  const distantUserId = distantUser.rows[0]!.id;
+  await pool.query(
+    `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+     VALUES ($1::uuid,$2,$3,$4)`,
+    [distantUserId, "https://push.example.test/distant", "p256dh", "auth"]
+  );
+  await pool.query(
+    `INSERT INTO notification_preferences (
+       user_id, discovery_latitude, discovery_longitude, discovery_radius_km
+     ) VALUES ($1::uuid, 48.8566, 2.3522, 25)`,
+    [distantUserId]
+  );
+
   const updateNotifications = await pool.query<{
     kind: string;
     deduplication_key: string;
@@ -224,12 +256,20 @@ test("ingestion is idempotent and detects updated/missing events", async () => {
   assert.equal(fourth.updatedEvents, 0);
   assert.equal(fourth.unchangedEvents, 1);
 
-  const allNotifications = await pool.query<{ kind: string }>(
-    "SELECT kind FROM notifications ORDER BY created_at"
+  const allNotifications = await pool.query<{ kind: string; user_id: string }>(
+    "SELECT kind, user_id FROM notifications ORDER BY created_at, user_id"
   );
   assert.deepEqual(
     allNotifications.rows.map((row) => row.kind).sort(),
-    ["event_updated", "new_event"].sort()
+    ["event_updated", "new_event", "new_event"].sort()
+  );
+  assert.equal(
+    allNotifications.rows.filter((row) => row.user_id === nearbyUserId).length,
+    1
+  );
+  assert.equal(
+    allNotifications.rows.some((row) => row.user_id === distantUserId),
+    false
   );
 });
 

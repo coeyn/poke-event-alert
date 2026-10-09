@@ -24,6 +24,27 @@ function reminderHoursValue(value: unknown): number {
   return Math.min(Math.floor(parsed), 24 * 30);
 }
 
+function discoveryRadiusValue(value: unknown): number {
+  const parsed = Number(value ?? 0);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.min(Math.floor(parsed), 200);
+}
+
+function locationValue(value: unknown) {
+  if (!value || typeof value !== "object") return null;
+  const location = value as Record<string, unknown>;
+  const latitude = Number(location.latitude);
+  const longitude = Number(location.longitude);
+  if (
+    !Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+    !Number.isFinite(longitude) || longitude < -180 || longitude > 180
+  ) return null;
+  return {
+    latitude: Number(latitude.toFixed(2)),
+    longitude: Number(longitude.toFixed(2))
+  };
+}
+
 export function registerUserRoutes(app: FastifyInstance, pool: Pool) {
   app.post("/users", async (request, reply) => {
     const body = (request.body ?? {}) as Record<string, unknown>;
@@ -151,7 +172,8 @@ export function registerUserRoutes(app: FastifyInstance, pool: Pool) {
           p.new_event_enabled,
           p.event_update_enabled,
           p.reminder_enabled,
-          p.reminder_hours_before
+          p.reminder_hours_before,
+          p.discovery_radius_km
         FROM users AS u
         LEFT JOIN notification_preferences AS p ON p.user_id = u.id
         WHERE u.id = $1::uuid
@@ -171,20 +193,24 @@ export function registerUserRoutes(app: FastifyInstance, pool: Pool) {
       newEventEnabled: row.new_event_enabled ?? true,
       eventUpdateEnabled: row.event_update_enabled ?? true,
       reminderEnabled: row.reminder_enabled ?? false,
-      reminderHoursBefore: row.reminder_hours_before ?? 24
+      reminderHoursBefore: row.reminder_hours_before ?? 24,
+      discoveryRadiusKm: row.discovery_radius_km ?? 0
     };
   });
 
   app.put("/users/:userId/preferences", async (request) => {
     const { userId } = request.params as { userId: string };
     const body = (request.body ?? {}) as Record<string, unknown>;
+    const location = locationValue(body.location);
 
     const preferences = {
       eventTypes: eventTypesValue(body.eventTypes),
       newEventEnabled: booleanValue(body.newEventEnabled, true),
       eventUpdateEnabled: booleanValue(body.eventUpdateEnabled, true),
       reminderEnabled: booleanValue(body.reminderEnabled, false),
-      reminderHoursBefore: reminderHoursValue(body.reminderHoursBefore)
+      reminderHoursBefore: reminderHoursValue(body.reminderHoursBefore),
+      discoveryRadiusKm: location ? discoveryRadiusValue(body.discoveryRadiusKm) : 0,
+      location
     };
 
     await pool.query(
@@ -195,16 +221,22 @@ export function registerUserRoutes(app: FastifyInstance, pool: Pool) {
           new_event_enabled,
           event_update_enabled,
           reminder_enabled,
-          reminder_hours_before
+          reminder_hours_before,
+          discovery_latitude,
+          discovery_longitude,
+          discovery_radius_km
         )
-        VALUES ($1::uuid,$2::jsonb,$3,$4,$5,$6)
+        VALUES ($1::uuid,$2::jsonb,$3,$4,$5,$6,$7,$8,$9)
         ON CONFLICT (user_id)
         DO UPDATE SET
           event_types = EXCLUDED.event_types,
           new_event_enabled = EXCLUDED.new_event_enabled,
           event_update_enabled = EXCLUDED.event_update_enabled,
           reminder_enabled = EXCLUDED.reminder_enabled,
-          reminder_hours_before = EXCLUDED.reminder_hours_before
+          reminder_hours_before = EXCLUDED.reminder_hours_before,
+          discovery_latitude = EXCLUDED.discovery_latitude,
+          discovery_longitude = EXCLUDED.discovery_longitude,
+          discovery_radius_km = EXCLUDED.discovery_radius_km
       `,
       [
         userId,
@@ -212,10 +244,21 @@ export function registerUserRoutes(app: FastifyInstance, pool: Pool) {
         preferences.newEventEnabled,
         preferences.eventUpdateEnabled,
         preferences.reminderEnabled,
-        preferences.reminderHoursBefore
+        preferences.reminderHoursBefore,
+        preferences.location?.latitude ?? null,
+        preferences.location?.longitude ?? null,
+        preferences.discoveryRadiusKm
       ]
     );
 
-    return { userId, ...preferences };
+    return {
+      userId,
+      eventTypes: preferences.eventTypes,
+      newEventEnabled: preferences.newEventEnabled,
+      eventUpdateEnabled: preferences.eventUpdateEnabled,
+      reminderEnabled: preferences.reminderEnabled,
+      reminderHoursBefore: preferences.reminderHoursBefore,
+      discoveryRadiusKm: preferences.discoveryRadiusKm
+    };
   });
 }

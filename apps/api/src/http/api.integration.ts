@@ -195,7 +195,8 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
     newEventEnabled: true,
     eventUpdateEnabled: true,
     reminderEnabled: false,
-    reminderHoursBefore: 24
+    reminderHoursBefore: 24,
+    discoveryRadiusKm: 0
   });
 
   const preferences = await app.inject({
@@ -206,7 +207,9 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
       newEventEnabled: true,
       eventUpdateEnabled: true,
       reminderEnabled: true,
-      reminderHoursBefore: 12
+      reminderHoursBefore: 12,
+      discoveryRadiusKm: 40,
+      location: { latitude: 48.514, longitude: -2.765 }
     }
   });
   assert.equal(preferences.statusCode, 200);
@@ -216,7 +219,23 @@ test("HTTP API exposes events, venues, follows and preferences", async () => {
     newEventEnabled: true,
     eventUpdateEnabled: true,
     reminderEnabled: true,
-    reminderHoursBefore: 12
+    reminderHoursBefore: 12,
+    discoveryRadiusKm: 40
+  });
+
+  const savedLocation = await pool.query<{
+    discovery_latitude: number;
+    discovery_longitude: number;
+    discovery_radius_km: number;
+  }>(
+    `SELECT discovery_latitude, discovery_longitude, discovery_radius_km
+    FROM notification_preferences WHERE user_id = $1::uuid`,
+    [userId]
+  );
+  assert.deepEqual(savedLocation.rows[0], {
+    discovery_latitude: 48.51,
+    discovery_longitude: -2.77,
+    discovery_radius_km: 40
   });
 
   const remove = await app.inject({

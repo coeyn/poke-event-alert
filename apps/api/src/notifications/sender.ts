@@ -123,8 +123,8 @@ export async function sendPendingNotifications(pool: Pool, limit = 100) {
     const payload = JSON.stringify({
       title:
         item.kind === "new_event"
-          ? `Nouveau tournoi : ${item.title}`
-          : `Tournoi modifié : ${item.title}`,
+          ? `Nouvel événement : ${item.title}`
+          : `Événement modifié : ${item.title}`,
       body: [
         item.venue_name,
         new Intl.DateTimeFormat("fr-FR", {

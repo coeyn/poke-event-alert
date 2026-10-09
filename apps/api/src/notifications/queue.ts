@@ -23,19 +23,39 @@ export async function queueEventNotifications(
         deduplication_key
       )
       SELECT
-        f.user_id,
+        recipients.user_id,
         $1::uuid,
         $4::text,
-        $4::text || ':' || $1::text || ':' || f.user_id::text || ':' || $5::text
-      FROM venue_follows AS f
+        $4::text || ':' || $1::text || ':' || recipients.user_id::text || ':' || $5::text
+      FROM (
+        SELECT user_id
+        FROM venue_follows
+        WHERE venue_id = $2::uuid
+
+        UNION
+
+        SELECT p.user_id
+        FROM notification_preferences AS p
+        JOIN venues AS v ON v.id = $2::uuid
+        WHERE
+          p.discovery_radius_km > 0
+          AND p.discovery_latitude IS NOT NULL
+          AND p.discovery_longitude IS NOT NULL
+          AND v.latitude IS NOT NULL
+          AND v.longitude IS NOT NULL
+          AND 6371 * 2 * ASIN(SQRT(LEAST(1,
+            POWER(SIN(RADIANS(v.latitude - p.discovery_latitude) / 2), 2)
+            + COS(RADIANS(p.discovery_latitude)) * COS(RADIANS(v.latitude))
+            * POWER(SIN(RADIANS(v.longitude - p.discovery_longitude) / 2), 2)
+          ))) <= p.discovery_radius_km
+      ) AS recipients
       LEFT JOIN notification_preferences AS p
-        ON p.user_id = f.user_id
+        ON p.user_id = recipients.user_id
       WHERE
-        f.venue_id = $2::uuid
-        AND EXISTS (
+        EXISTS (
           SELECT 1
           FROM push_subscriptions AS s
-          WHERE s.user_id = f.user_id
+          WHERE s.user_id = recipients.user_id
         )
         AND (
           ($4::text = 'new_event' AND COALESCE(p.new_event_enabled, true))

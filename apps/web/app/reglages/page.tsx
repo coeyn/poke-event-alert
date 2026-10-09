@@ -44,9 +44,12 @@ export default function ReglagesPage() {
   }
 
   async function save() {
+    const radiusNeedsLocation = settings.discoveryRadiusKm > 0 && !settings.location;
     saveLocalSettings(settings);
     setSaved(true);
-    setSaveMessage("");
+    setSaveMessage(radiusNeedsLocation
+      ? "Enregistre ta position pour activer les alertes dans ce rayon."
+      : "");
 
     if (PUBLIC_API_CONFIGURED) {
       try {
@@ -65,7 +68,9 @@ export default function ReglagesPage() {
           newEventEnabled: true,
           eventUpdateEnabled: true,
           reminderEnabled: false,
-          reminderHoursBefore: 24
+          reminderHoursBefore: 24,
+          discoveryRadiusKm: settings.location ? settings.discoveryRadiusKm : 0,
+          location: settings.discoveryRadiusKm > 0 ? settings.location : null
         });
       } catch {
         setSaveMessage("Enregistré sur cet appareil. La synchronisation des alertes est momentanément indisponible.");
@@ -125,11 +130,11 @@ export default function ReglagesPage() {
 
       <section className="settingsCard">
         <h2>Découvrir autour de moi</h2>
-        <p className="settingHint">Le calendrier affiche toujours les événements de tes boutiques favorites. Ajoute aussi ceux d'autres boutiques dans un rayon autour de ta position.</p>
+        <p className="settingHint">Le calendrier affiche les événements de tes boutiques favorites et ceux des boutiques proches. Pour recevoir aussi leurs alertes, enregistre ta position et tes préférences.</p>
         <label className="rangeLabel" htmlFor="discovery-radius">Rayon de découverte <strong>{settings.discoveryRadiusKm === 0 ? "Désactivé" : `${settings.discoveryRadiusKm} km`}</strong></label>
         <input id="discovery-radius" className="rangeInput" type="range" min="0" max="200" step="10" value={settings.discoveryRadiusKm} onChange={(event) => { setSaved(false); setSettings((current) => ({ ...current, discoveryRadiusKm: Number(event.target.value) })); }} />
         <button className="secondaryButton" type="button" onClick={locate} disabled={locationBusy}>{locationBusy ? "Localisation…" : settings.location ? "Actualiser ma position" : "Utiliser ma position"}</button>
-        {settings.location && <><button className="secondaryButton" type="button" onClick={() => { setSaved(false); setSettings((current) => ({ ...current, location: null, discoveryRadiusKm: 0 })); setLocationMessage("Position retirée. Enregistre tes préférences pour confirmer."); }}>Effacer ma position</button><p className="settingHint">Position enregistrée sur cet appareil uniquement.</p></>}
+        {settings.location && <><button className="secondaryButton" type="button" onClick={() => { setSaved(false); setSettings((current) => ({ ...current, location: null, discoveryRadiusKm: 0 })); setLocationMessage("Position retirée. Enregistre tes préférences pour confirmer."); }}>Effacer ma position</button><p className="settingHint">Pour recevoir les alertes de proximité, une position approximative est transmise à l’API avec le rayon choisi. Avec le rayon désactivé, elle reste sur cet appareil.</p></>}
         {locationMessage && <p className="settingHint" role="status">{locationMessage}</p>}
       </section>
 

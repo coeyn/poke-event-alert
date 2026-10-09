@@ -50,6 +50,7 @@ export type Preferences = {
   eventUpdateEnabled: boolean;
   reminderEnabled: boolean;
   reminderHoursBefore: number;
+  discoveryRadiusKm: number;
 };
 
 export const API_BASE_URL =
@@ -155,7 +156,9 @@ export function getPreferences(userId: string) {
 
 export function savePreferences(
   userId: string,
-  preferences: Omit<Preferences, "userId">
+  preferences: Omit<Preferences, "userId"> & {
+    location: { latitude: number; longitude: number } | null;
+  }
 ) {
   return request<Preferences>(
     `/users/${encodeURIComponent(userId)}/preferences`,
