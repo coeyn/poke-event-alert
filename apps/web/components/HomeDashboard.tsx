@@ -119,7 +119,11 @@ export function HomeDashboard() {
   );
   const venues = useMemo(() => venuesFromEvents(visibleEvents), [visibleEvents]);
   const upcomingEvents = useMemo(() => {
-    const eligible = visibleEvents.filter((event) => !settings || matchesEventType(event.type, settings));
+    const hasDiscoveryArea = Boolean(settings?.location && settings.discoveryRadiusKm > 0);
+    const eligible = visibleEvents.filter((event) =>
+      (!settings || matchesEventType(event.type, settings)) &&
+      (!hasDiscoveryArea || isPersonalEvent(event, favorites, settings ?? DEFAULT_SETTINGS))
+    );
     return UPCOMING_CATEGORY_PRIORITY.flatMap((category) => {
       const candidates = eligible
         .filter((event) => {

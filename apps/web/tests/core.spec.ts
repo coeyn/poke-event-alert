@@ -119,6 +119,19 @@ test("home keeps nearby events and local favorites when API sync fails", async (
   expect(await page.evaluate(() => localStorage.getItem("poke-event-alert:preview-favorites"))).toContain("league:1001");
 });
 
+test("home does not fill event categories with shops outside the discovery radius", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("poke-event-alert:preview-settings", JSON.stringify({
+      discoveryRadiusKm: 10,
+      location: { latitude: 48.11, longitude: -1.68 }
+    }));
+  });
+  await page.goto("/");
+
+  await expect(page.locator(".homeEventTitle")).toHaveText(["Session Play payante"]);
+  await expect(page.locator(".homeEventVenue")).toContainText("Rennes");
+});
+
 test("opens an event and calendar, with static data when the API is unavailable", async ({ page }) => {
   await page.route("http://127.0.0.1:3999/**", (route) => route.abort());
   await page.goto("/explorer/");
