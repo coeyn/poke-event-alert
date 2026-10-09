@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EventCard } from "../../components/EventCard";
 import { Loading } from "../../components/Loading";
+import { BackLink } from "../../components/BackLink";
 import {
   loadUpcomingFrance,
   readFavorites,
@@ -59,7 +59,7 @@ export default function BoutiquePage() {
         <span className="eyebrow">Boutique</span>
         <h1>Boutique introuvable</h1>
         <p className="mutedText">Elle n'a peut-être aucun événement dans la fenêtre actuelle.</p>
-        <Link className="secondaryButton" href="/boutiques/">← Retour aux boutiques</Link>
+        <BackLink className="secondaryButton" fallback="/boutiques/">← Retour</BackLink>
       </section>
     );
   }
@@ -98,7 +98,7 @@ export default function BoutiquePage() {
 
   return (
     <>
-      <Link className="backLink" href="/boutiques/">← Retour aux boutiques</Link>
+      <BackLink fallback="/boutiques/">← Retour</BackLink>
 
       <section className="detailCard venueDetail">
         <span className="eyebrow">Boutique / Ligue</span>

@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
+
+const CURRENT_PATH_KEY = "poke-event-alert:navigation-current";
+const PREVIOUS_PATH_KEY = "poke-event-alert:navigation-previous";
 
 const links = [
   { href: "/", label: "Accueil", icon: "home" },
@@ -25,6 +29,27 @@ function NavIcon({ name }: { name: string }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const firstPathRender = useRef(true);
+
+  useEffect(() => {
+    const currentPath = sessionStorage.getItem(CURRENT_PATH_KEY);
+
+    if (firstPathRender.current) {
+      firstPathRender.current = false;
+      const cameFromThisApp = document.referrer
+        ? new URL(document.referrer).origin === window.location.origin
+        : false;
+
+      if (!cameFromThisApp) sessionStorage.removeItem(PREVIOUS_PATH_KEY);
+      else if (currentPath && currentPath !== pathname) {
+        sessionStorage.setItem(PREVIOUS_PATH_KEY, currentPath);
+      }
+    } else if (currentPath && currentPath !== pathname) {
+      sessionStorage.setItem(PREVIOUS_PATH_KEY, currentPath);
+    }
+
+    sessionStorage.setItem(CURRENT_PATH_KEY, pathname);
+  }, [pathname]);
 
   return (
     <div className="appFrame">

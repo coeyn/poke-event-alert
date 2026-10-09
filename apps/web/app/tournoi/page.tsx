@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   formatDate,
@@ -16,6 +15,7 @@ import { syncVenueFollow } from "../../lib/follows";
 import { readBlockedVenues, setVenueBlocked } from "../../lib/blocked-venues";
 import { EventTypeMark } from "../../components/EventTypeMark";
 import { EventAttendance } from "../../components/EventAttendance";
+import { BackLink } from "../../components/BackLink";
 
 export default function TournamentPage() {
   const [event, setEvent] = useState<PreviewEvent | null>(null);
@@ -48,7 +48,7 @@ export default function TournamentPage() {
         <span className="eyebrow">Tournoi</span>
         <h1>Événement introuvable</h1>
         <p className="mutedText">Il n'est peut-être plus présent dans la fenêtre actuelle de la preview.</p>
-        <Link className="secondaryButton" href="/explorer/">← Retour aux événements</Link>
+        <BackLink className="secondaryButton" fallback="/calendrier/">← Retour</BackLink>
       </section>
     );
   }
@@ -96,7 +96,7 @@ export default function TournamentPage() {
 
   return (
     <>
-      <Link className="backLink" href="/explorer/">← Retour aux événements</Link>
+      <BackLink fallback="/calendrier/">← Retour</BackLink>
 
       <section className="detailCard">
         <div className="eventDetailVisual"><EventTypeMark type={event.type} game={event.game} size="large" /><span>{event.type}</span></div>
