@@ -181,8 +181,9 @@ export function HomeDashboard() {
   if (error) return <div className="notice error">{error}</div>;
 
   return <div className="homeDashboard">
-    <header className="homeBrand" aria-label="Poké Event Alert">
-      <Image className="homeBrandLogo" src={`${BASE_PATH}/logo-poke-event-alert.png`} alt="Poké Event Alert — Tous les événements JCC, VGC, GO et Unité" width={2172} height={724} unoptimized loading="eager" />
+    <header className="homeBrand">
+      <h1 className="srOnly">Poké Event Alert — Tous les événements JCC, VGC, GO et Unité</h1>
+      <Image className="homeBrandLogo" src={`${BASE_PATH}/logo-poke-event-alert.png`} alt="" width={2033} height={381} unoptimized loading="eager" />
     </header>
 
     <section className="homeSection homeFollowed" aria-labelledby="home-followed-heading">
