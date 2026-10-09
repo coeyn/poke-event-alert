@@ -464,7 +464,8 @@ button:disabled { cursor: not-allowed; }
 .followedShopName { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .followedShopName strong { overflow: hidden; color: #1a3557; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .followedShopName small { overflow: hidden; color: #7387a1; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.venueNewDot { position: absolute; top: 0; right: 12px; width: 8px; height: 23px; border-radius: 0 0 5px 5px; background: linear-gradient(180deg, #f04b59, #c92e40); box-shadow: 0 2px 5px #c92e4040; }
+.venueNewDot { position: absolute; top: 0; right: 12px; width: 8px; height: 23px; border-radius: 0 0 5px 5px; background: linear-gradient(180deg, #f04b59, #c92e40); box-shadow: 0 2px 5px #c92e4040; animation: newShopMarkerPulse 1.5s ease-in-out infinite; transform-origin: top center; }
+@keyframes newShopMarkerPulse { 0%, 100% { box-shadow: 0 2px 5px #c92e4040; transform: scaleY(1); } 50% { box-shadow: 0 3px 11px #c92e4080; transform: scaleY(1.14); } }
 .followedShopArrow { color: #8ca7c7; font-size: 23px; line-height: 1; }
 .homeEmptyFollow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 65px; padding: 14px 16px; border: 1px dashed #cddced; border-radius: 14px; background: #ffffffb8; color: #687d98; font-size: 12px; }
 .homeEmptyFollow a { color: #1769d2; font-weight: 800; white-space: nowrap; }
@@ -564,3 +565,4 @@ button:disabled { cursor: not-allowed; }
   .navItem { border-radius: 11px; }
 }
 @media (max-width: 380px) { .homeUpcomingGrid { gap: 5px; } .homeEventCard { min-height: 215px; } .homeEventArtwork { height: 68px; } }
+@media (prefers-reduced-motion: reduce) { .venueNewDot { animation: none; } }
