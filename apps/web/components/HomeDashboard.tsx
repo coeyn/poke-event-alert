@@ -51,11 +51,34 @@ export function HomeDashboard() {
     }
     return map;
   }, [personalEvents]);
+  const radarDescription = settings?.discoveryRadiusKm
+    ? `Rayon actif · ${settings.discoveryRadiusKm} km`
+    : favorites.length
+      ? `${favorites.length} boutique${favorites.length > 1 ? "s" : ""} suivie${favorites.length > 1 ? "s" : ""}`
+      : "Découverte nationale";
 
   if (loading) return <Loading />;
   if (error) return <div className="notice error">{error}</div>;
 
   return <>
+    <section className="homeRadar" aria-label="Radar des événements">
+      <div className="radarGraphic" aria-hidden="true">
+        <span className="radarSweep" />
+        <span className="radarCore"><i /></span>
+        <span className="radarPing pingOne" />
+        <span className="radarPing pingTwo" />
+        <span className="radarPing pingThree" />
+      </div>
+      <div className="radarCopy">
+        <span className="radarEyebrow"><i /> Cherch’Combat · en direct</span>
+        <strong>{radarDescription}</strong>
+        <span>{personalEvents.length
+          ? `${personalEvents.length} événement${personalEvents.length > 1 ? "s" : ""} repéré${personalEvents.length > 1 ? "s" : ""} pour toi`
+          : "Suis une boutique ou active un rayon pour personnaliser tes alertes."}</span>
+      </div>
+      <div className="radarCount"><strong>{upcoming.length}</strong><span>à venir</span></div>
+      <Link href="/explorer/" className="radarAction">Explorer les événements <span aria-hidden="true">↗</span></Link>
+    </section>
     <div className="homeColumns">
       <div className="homePrimary">
         <section className="homeSection">
