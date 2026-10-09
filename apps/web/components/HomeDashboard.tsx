@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Loading } from "./Loading";
 import { EventTypeMark } from "./EventTypeMark";
@@ -19,6 +20,7 @@ import { syncVenueFollow } from "../lib/follows";
 
 const FEATURED_VENUE_KEY = "poke-event-alert:featured-venue";
 const RECENT_DAYS = 7;
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 function recentCutoff() {
   const date = new Date();
@@ -37,6 +39,25 @@ function eventDate(event: PreviewEvent) {
     month: "short",
     ...(event.allDay ? {} : { hour: "2-digit", minute: "2-digit" })
   }).format(new Date(event.startsAt));
+}
+
+function pokemonArtwork(event: PreviewEvent) {
+  const game = event.game.toUpperCase();
+  if (game === "VGC") return "lucario";
+  if (game === "GO") return "pikachu";
+  if (game === "JCC") return event.type === "Avant-première" ? "mew" : "gengar";
+  return "pikachu";
+}
+
+function eventDayLabel(event: PreviewEvent) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const eventDay = new Date(event.startsAt);
+  const sameDay = (left: Date, right: Date) => left.toDateString() === right.toDateString();
+  if (sameDay(eventDay, today)) return "Aujourd’hui";
+  if (sameDay(eventDay, tomorrow)) return "Demain";
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(eventDay);
 }
 
 function ShopIcon() {
@@ -183,13 +204,16 @@ export function HomeDashboard() {
     <section className="homeSection homeUpcoming" aria-labelledby="home-upcoming-heading">
       <div className="sectionHead"><h2 id="home-upcoming-heading">À venir</h2><Link className="sectionLink" href="/calendrier/">Calendrier →</Link></div>
       {upcomingEvents.length ? <div className="homeUpcomingGrid">
-        {upcomingEvents.map((event) => <Link className="homeEventCard" key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
-          <span className="homeEventTop"><span className="homeEventDate">{eventDate(event)}</span><EventTypeMark type={event.type} game={event.game} size="small" /></span>
-          <span className="homeEventType">{event.type} · {event.game}</span>
+        {upcomingEvents.map((event, index) => <Link className="homeEventCard" key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
+          <span className="homeEventArtwork">
+            <Image src={`${BASE_PATH}/pokemon/${pokemonArtwork(event)}.png`} alt="" width={480} height={240} unoptimized loading={index === 0 ? "eager" : "lazy"} />
+            <span className="homeEventDay">{eventDayLabel(event)}</span>
+          </span>
+          <span className="homeEventTop"><span className="homeEventType">{event.type} · {event.game}</span><EventTypeMark type={event.type} game={event.game} size="small" /></span>
           <strong className="homeEventTitle">{displayTitle(event)}</strong>
+          <span className="homeEventDate">{eventDate(event)}</span>
           <span className="homeEventVenue">{event.venueName} · {event.city || "France"}</span>
           {formatAdmission(event.admission) && <span className="homeEventPrice">{formatAdmission(event.admission)}</span>}
-          <span className="homeEventArrow" aria-hidden="true">↗</span>
         </Link>)}
       </div> : <div className="homeEmptyFollow"><span>Aucun événement à venir dans les données.</span><Link href="/explorer/">Explorer les événements →</Link></div>}
     </section>

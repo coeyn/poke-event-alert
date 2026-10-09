@@ -42,6 +42,9 @@ test("home presents the requested sections and keeps mobile navigation at the bo
   expect(sections[0]).toBeLessThan(sections[1]);
   expect(sections[1]).toBeLessThan(sections[2]);
 
+  await expect(page.locator(".homeEventArtwork img")).toHaveCount(2);
+  expect(await page.locator("body").evaluate((body) => body.scrollWidth)).toBeLessThanOrEqual(390);
+
   const nav = await page.locator(".bottomNav").boundingBox();
   expect(nav).not.toBeNull();
   expect(nav!.y).toBeGreaterThan(600);

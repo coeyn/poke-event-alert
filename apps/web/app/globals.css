@@ -468,15 +468,18 @@ button:disabled { cursor: not-allowed; }
 .followedShopArrow { color: #8ca7c7; font-size: 23px; line-height: 1; }
 .homeEmptyFollow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 65px; padding: 14px 16px; border: 1px dashed #cddced; border-radius: 14px; background: #ffffffb8; color: #687d98; font-size: 12px; }
 .homeEmptyFollow a { color: #1769d2; font-weight: 800; white-space: nowrap; }
-.homeUpcomingGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
-.homeEventCard { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; min-height: 185px; padding: 13px; overflow: hidden; border: 1px solid #dce6f2; border-radius: 15px; background: linear-gradient(155deg, #fff 0 70%, #f4f8ff); box-shadow: 0 6px 17px #244b7409; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.homeUpcomingGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; min-width: 0; width: 100%; }
+.homeEventCard { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; min-height: 258px; padding: 0 0 12px; overflow: hidden; border: 1px solid #dce6f2; border-radius: 15px; background: #fff; box-shadow: 0 6px 17px #244b7409; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
 .homeEventCard:hover { transform: translateY(-3px); border-color: #aacbee; box-shadow: 0 12px 24px #244b7414; }
-.homeEventTop { display: flex; align-items: center; justify-content: space-between; gap: 7px; width: 100%; }
-.homeEventDate { overflow: hidden; color: #657b96; font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.homeEventArtwork { position: relative; display: grid; place-items: center; width: 100%; height: 122px; flex: 0 0 auto; overflow: hidden; background: radial-gradient(ellipse at 50% 110%, #8bc5ff 0, #e5f3ff 62%, #f3f8ff 100%); }
+.homeEventArtwork img { width: 100%; height: 100%; object-fit: contain; object-position: center 48%; padding: 8px 12px 0; filter: drop-shadow(0 5px 5px #123d7226); }
+.homeEventDay { position: absolute; top: 9px; left: 9px; max-width: calc(100% - 18px); overflow: hidden; padding: 5px 8px; border: 1px solid #ffffffaa; border-radius: 7px; background: #1769d2eF; color: #fff; font-size: 9px; font-weight: 850; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.homeEventTop { display: flex; align-items: center; justify-content: space-between; gap: 7px; width: 100%; padding: 2px 11px 0; }
+.homeEventDate { overflow: hidden; width: 100%; padding: 0 11px; color: #657b96; font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .homeEventType { color: #1769d2; font-size: 9px; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
-.homeEventTitle { display: -webkit-box; overflow: hidden; width: 100%; color: #172d4b; font-size: 13px; font-weight: 850; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.homeEventVenue { overflow: hidden; width: 100%; color: #70839b; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.homeEventPrice { display: inline-flex; align-items: center; min-height: 22px; margin-top: auto; padding: 0 8px; border: 1px solid #cce7d8; border-radius: 999px; background: #eff9f3; color: #176b45; font-size: 10px; font-weight: 850; white-space: nowrap; }
+.homeEventTitle { display: -webkit-box; overflow: hidden; width: 100%; padding: 0 11px; color: #172d4b; font-size: 13px; font-weight: 850; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.homeEventVenue { overflow: hidden; width: 100%; padding: 0 11px; color: #70839b; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.homeEventPrice { display: inline-flex; align-items: center; min-height: 22px; margin: auto 11px 0; padding: 0 8px; border: 1px solid #cce7d8; border-radius: 999px; background: #eff9f3; color: #176b45; font-size: 10px; font-weight: 850; white-space: nowrap; }
 .homeEventTop .eventTypeMark.small { width: 35px; height: 35px; border-radius: 10px; }
 .homeEventArrow { position: absolute; right: 12px; bottom: 12px; color: #3982d5; font-size: 15px; }
 .homeSpotlight .sectionHead { margin-bottom: 11px; }
@@ -513,6 +516,7 @@ button:disabled { cursor: not-allowed; }
   .bottomNav { top: auto; right: 0; bottom: 0; left: 0; border-radius: 18px 18px 0 0; border-bottom: 0; box-shadow: 0 -7px 24px #244b7414; }
   .navItem { min-height: 55px; }
   .navItem.active { box-shadow: inset 0 3px #2074df; }
+  .homeUpcomingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   body { background-size: auto, 26px 26px, 26px 26px, auto; }
@@ -530,8 +534,17 @@ button:disabled { cursor: not-allowed; }
   .followedShopName strong { font-size: 10px; }
   .followedShopName small { font-size: 9px; }
   .followedShopArrow { font-size: 19px; }
-  .homeUpcomingGrid { grid-auto-columns: minmax(235px, 78%); grid-auto-flow: column; grid-template-columns: none; gap: 10px; overflow-x: auto; padding: 2px 1px 10px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
-  .homeEventCard { min-height: 174px; padding: 12px; scroll-snap-align: start; }
+  .homeUpcomingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; overflow: hidden; }
+  .homeEventCard { min-height: 238px; padding-bottom: 10px; }
+  .homeEventArtwork { height: 100px; }
+  .homeEventArtwork img { padding: 7px 8px 0; }
+  .homeEventTop { gap: 4px; padding-right: 8px; padding-left: 8px; }
+  .homeEventTop .eventTypeMark.small { width: 29px; height: 29px; flex: 0 0 auto; }
+  .homeEventType { font-size: 8px; letter-spacing: .025em; }
+  .homeEventDate, .homeEventTitle, .homeEventVenue { padding-right: 9px; padding-left: 9px; }
+  .homeEventTitle { font-size: 12px; }
+  .homeEventDate, .homeEventVenue { font-size: 9px; }
+  .homeEventPrice { margin-right: 9px; margin-left: 9px; }
   .homeEmptyFollow { align-items: flex-start; flex-direction: column; }
   .spotlightShopHead { gap: 10px; min-height: 98px; padding: 13px; }
   .spotlightShopIcon { width: 46px; height: 46px; }
@@ -547,4 +560,4 @@ button:disabled { cursor: not-allowed; }
   .spotlightEvent .homeEventPrice { padding: 0 6px; font-size: 9px; }
   .navItem { border-radius: 11px; }
 }
-@media (max-width: 380px) { .followedShopList { grid-template-columns: 1fr; } }
+@media (max-width: 380px) { .followedShopList { grid-template-columns: 1fr; } .homeUpcomingGrid { gap: 7px; } .homeEventCard { min-height: 226px; } .homeEventArtwork { height: 88px; } }
