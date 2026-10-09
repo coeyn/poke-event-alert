@@ -535,6 +535,7 @@ button:disabled { cursor: not-allowed; }
   .followedShopName small { font-size: 9px; }
   .followedShopArrow { font-size: 19px; }
   .homeUpcomingGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; overflow: hidden; }
+  .homeEventCard:nth-child(n + 4) { display: none; }
   .homeEventCard { min-height: 222px; padding-bottom: 9px; gap: 6px; }
   .homeEventArtwork { height: 78px; }
   .homeEventArtwork img { padding: 7px 8px 0; }

@@ -48,6 +48,7 @@ test("home presents the requested sections and keeps mobile navigation at the bo
   expect(sections[1]).toBeLessThan(sections[2]);
 
   await expect(page.locator(".homeEventArtwork img")).toHaveCount(4);
+  await expect(page.locator(".homeEventCard:visible")).toHaveCount(3);
   await expect(page.locator(".homeEventTitle")).toHaveText([
     "League Cup de test",
     "League Challenge moins chère",
@@ -58,12 +59,15 @@ test("home presents the requested sections and keeps mobile navigation at the bo
   const upcomingCards = await page.locator(".homeEventCard").evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect()));
   expect(upcomingCards[0].x).toBeLessThan(upcomingCards[1].x);
   expect(upcomingCards[2].y).toBe(upcomingCards[0].y);
-  expect(upcomingCards[3].y).toBeGreaterThan(upcomingCards[0].y);
+  expect(upcomingCards[3].width).toBe(0);
 
   const nav = await page.locator(".bottomNav").boundingBox();
   expect(nav).not.toBeNull();
   expect(nav!.y).toBeGreaterThan(600);
   expect(nav!.y + nav!.height).toBeGreaterThanOrEqual(842);
+
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await expect(page.locator(".homeEventCard:visible")).toHaveCount(4);
 });
 
 test("home and Explorer find, open, follow, and unfollow a shop", async ({ page }) => {
