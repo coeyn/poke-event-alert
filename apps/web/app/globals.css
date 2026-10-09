@@ -443,56 +443,108 @@ button:disabled { cursor: not-allowed; }
 .attendanceButton { background: linear-gradient(105deg, #1769d2, #2884e5); }
 .attendanceButton:hover:not(:disabled) { background: #1257b5; }
 
-.homeRadar { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr) auto auto; align-items: center; gap: 18px; min-height: 132px; overflow: hidden; margin: -1px 0 25px; padding: 18px 22px; border: 1px solid #145cb8; border-radius: 20px; background: radial-gradient(ellipse at 80% 50%, #338be5 0, transparent 44%), linear-gradient(112deg, #103d79, #1769c4 62%, #2278ce); box-shadow: 0 14px 30px #185b9b2b; color: #fff; isolation: isolate; }
-.homeRadar::before { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, transparent 49%, #ffffff0a 50%), linear-gradient(transparent 49%, #ffffff0a 50%); background-size: 28px 28px; content: ""; mask-image: linear-gradient(90deg, transparent, #000 48%, #000); }
-.radarGraphic { position: relative; width: 88px; height: 88px; overflow: hidden; border: 1px solid #b8dcff80; border-radius: 50%; background: repeating-radial-gradient(circle, #d8efff25 0 1px, transparent 2px 17px), #0d3f7f99; box-shadow: inset 0 0 20px #56aaff33, 0 0 22px #70bcff20; }
-.radarGraphic::before, .radarGraphic::after { position: absolute; inset: 50% auto auto 0; width: 100%; height: 1px; background: #c3e4ff55; content: ""; }
-.radarGraphic::after { transform: rotate(90deg); }
-.radarSweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 5deg, transparent 0 72%, #62c4ff77 88%, transparent 100%); animation: radarTurn 7s linear infinite; }
-.radarCore { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 16px; height: 16px; transform: translate(-50%, -50%); border: 2px solid #fff; border-radius: 50%; background: #e83e50; box-shadow: 0 0 0 5px #ffffff30, 0 0 16px #b9e0ff; }
-.radarCore i { width: 4px; height: 4px; border-radius: 50%; background: #fff; }
-.radarPing { position: absolute; width: 7px; height: 7px; border: 1px solid #fff; border-radius: 50%; background: #69d7ff; box-shadow: 0 0 10px #69d7ff; }
-.pingOne { top: 22px; left: 56px; }.pingTwo { top: 58px; left: 24px; background: #ff6471; }.pingThree { top: 38px; left: 69px; width: 5px; height: 5px; }
-.radarCopy { display: grid; gap: 5px; min-width: 0; }
-.radarEyebrow { display: flex; align-items: center; gap: 7px; color: #c5e3ff; font-size: 10px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
-.radarEyebrow i { width: 7px; height: 7px; border-radius: 50%; background: #5cf0bc; box-shadow: 0 0 9px #5cf0bc; }
-.radarCopy > strong { overflow: hidden; font-size: 18px; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
-.radarCopy > span:last-child { color: #d7eaff; font-size: 12px; line-height: 1.4; }
-.radarCount { display: grid; justify-items: center; min-width: 65px; padding: 8px 13px; border-left: 1px solid #ffffff40; }
-.radarCount strong { font-size: 27px; line-height: 1; }
-.radarCount span { margin-top: 5px; color: #cfe5ff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
-.radarAction { display: inline-flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 15px; border: 1px solid #ffffff70; border-radius: 11px; background: #ffffff18; color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; transition: background .18s ease, transform .18s ease; }
-.radarAction:hover { transform: translateY(-1px); background: #ffffff2b; }
-.radarAction span { color: #ff7180; font-size: 17px; }
-@keyframes radarTurn { to { transform: rotate(360deg); } }
+.homeDashboard { display: grid; gap: 22px; }
+.homeBrand { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 11px 17px; border: 1px solid #d8e5f4; border-radius: 17px; background: linear-gradient(105deg, #fff, #f4f9ff); box-shadow: 0 6px 18px #244b7409; }
+.homeBrandMark { display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; }
+.homeBrandMark svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 4px #1769d226); }
+.homeBrandText { display: grid; gap: 2px; min-width: 0; }
+.homeBrandText h1 { margin: 0; color: #14243d; font-size: 19px; font-style: italic; font-weight: 900; letter-spacing: -.055em; line-height: 1; }
+.homeBrandText em { color: #1769d2; font-style: italic; }
+.homeBrandText small { color: #6b7f99; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.homeBrandSignal { display: grid; place-items: center; width: 35px; height: 35px; margin-left: auto; border: 1px solid #d9e7f6; border-radius: 50%; background: #fff; }
+.homeBrandSignal i { width: 9px; height: 9px; border-radius: 50%; background: #e33c4c; box-shadow: 0 0 0 4px #e33c4c18; }
+.homeDashboard .homeSection { min-width: 0; margin: 0; }
+.homeDashboard .sectionHead { margin-bottom: 11px; }
+.followedShopList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.followedShop { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 72px; padding: 10px 12px; border: 1px solid #dce6f2; border-radius: 14px; background: #fff; box-shadow: 0 5px 15px #244b7408; transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.followedShop:hover { transform: translateY(-2px); border-color: #a9cbee; box-shadow: 0 9px 20px #244b7412; }
+.followedShopIcon, .spotlightShopIcon { display: grid; place-items: center; flex: 0 0 auto; border: 1px solid #d4e5f7; border-radius: 12px; background: linear-gradient(145deg, #f3f8ff, #e7f2ff); color: #1769d2; }
+.followedShopIcon { width: 43px; height: 43px; }
+.followedShopIcon svg { width: 23px; height: 23px; }
+.followedShopName { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.followedShopName strong { overflow: hidden; color: #1a3557; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.followedShopName small { overflow: hidden; color: #7387a1; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.venueNewDot { position: relative; width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: #e33c4c; box-shadow: 0 0 0 4px #e33c4c16; }
+.followedShopArrow { color: #8ca7c7; font-size: 23px; line-height: 1; }
+.homeEmptyFollow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 65px; padding: 14px 16px; border: 1px dashed #cddced; border-radius: 14px; background: #ffffffb8; color: #687d98; font-size: 12px; }
+.homeEmptyFollow a { color: #1769d2; font-weight: 800; white-space: nowrap; }
+.homeUpcomingGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
+.homeEventCard { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; min-height: 185px; padding: 13px; overflow: hidden; border: 1px solid #dce6f2; border-radius: 15px; background: linear-gradient(155deg, #fff 0 70%, #f4f8ff); box-shadow: 0 6px 17px #244b7409; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.homeEventCard:hover { transform: translateY(-3px); border-color: #aacbee; box-shadow: 0 12px 24px #244b7414; }
+.homeEventTop { display: flex; align-items: center; justify-content: space-between; gap: 7px; width: 100%; }
+.homeEventDate { overflow: hidden; color: #657b96; font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.homeEventType { color: #1769d2; font-size: 9px; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
+.homeEventTitle { display: -webkit-box; overflow: hidden; width: 100%; color: #172d4b; font-size: 13px; font-weight: 850; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.homeEventVenue { overflow: hidden; width: 100%; color: #70839b; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.homeEventPrice { display: inline-flex; align-items: center; min-height: 22px; margin-top: auto; padding: 0 8px; border: 1px solid #cce7d8; border-radius: 999px; background: #eff9f3; color: #176b45; font-size: 10px; font-weight: 850; white-space: nowrap; }
+.homeEventTop .eventTypeMark.small { width: 35px; height: 35px; border-radius: 10px; }
+.homeEventArrow { position: absolute; right: 12px; bottom: 12px; color: #3982d5; font-size: 15px; }
+.homeSpotlight .sectionHead { margin-bottom: 11px; }
+.spotlightChange { min-height: 34px; padding: 0 11px; border: 1px solid #d6e3f1; border-radius: 999px; background: #fff; color: #1769d2; font-size: 11px; font-weight: 800; }
+.spotlightChange:hover { border-color: #9bbde4; background: #f3f8ff; }
+.spotlightCard { overflow: hidden; border: 1px solid #9dc5f0; border-radius: 17px; background: #fff; box-shadow: 0 9px 24px #1769d215; }
+.spotlightShopHead { display: flex; align-items: center; gap: 13px; min-height: 112px; padding: 17px; background: radial-gradient(ellipse at 86% 20%, #4e9ce64d, transparent 37%), linear-gradient(105deg, #123d72, #1769bd); color: #fff; }
+.spotlightShopIcon { width: 57px; height: 57px; border-color: #ffffff70; border-radius: 50%; background: #ffffff1c; color: #fff; }
+.spotlightShopIcon svg { width: 28px; height: 28px; }
+.spotlightShopIdentity { min-width: 0; flex: 1; }
+.spotlightEyebrow { color: #c4e1ff; font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.spotlightShopIdentity h3 { overflow: hidden; margin: 3px 0; font-size: 18px; font-weight: 850; letter-spacing: -.025em; text-overflow: ellipsis; white-space: nowrap; }
+.spotlightShopIdentity p { overflow: hidden; margin: 0; color: #dbeaff; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.spotlightFollow { flex: 0 0 auto; min-height: 39px; padding: 0 14px; border: 1px solid #fff; border-radius: 999px; background: #fff; color: #145cb5; font-size: 11px; font-weight: 850; }
+.spotlightFollow:hover { background: #edf6ff; }
+.spotlightFollow.followed { border-color: #ffffff66; background: #ffffff20; color: #fff; }
+.spotlightError { margin: 0; padding: 8px 16px; background: #fff3f4; color: #b92e3d; font-size: 11px; }
+.spotlightEventsHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 42px; padding: 0 15px; border-bottom: 1px solid #e7eef7; }
+.spotlightEventsHead strong { color: #254365; font-size: 11px; }
+.spotlightEventsHead a { color: #1769d2; font-size: 10px; font-weight: 800; }
+.spotlightEventList { padding: 0 14px; }
+.spotlightEvent { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 59px; border-bottom: 1px solid #edf2f8; }
+.spotlightEvent:last-child { border-bottom: 0; }
+.spotlightEventCopy { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.spotlightEventCopy strong { overflow: hidden; color: #193353; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.spotlightEventCopy small { color: #7286a0; font-size: 10px; }
+.spotlightEvent .homeEventPrice { margin-top: 0; }
+.spotlightEventArrow { color: #4385cf; font-size: 19px; }
+.spotlightNoEvents { margin: 0; padding: 16px; color: #70839b; font-size: 11px; }
+.spotlightNoEvents a { color: #1769d2; font-weight: 800; }
 
 @media (max-width: 900px) {
   .appFrame { width: 100%; }
-  .bottomNav { border-radius: 18px 18px 0 0; border-bottom: 0; box-shadow: 0 -7px 24px #244b7414; }
+  .bottomNav { top: auto; right: 0; bottom: 0; left: 0; border-radius: 18px 18px 0 0; border-bottom: 0; box-shadow: 0 -7px 24px #244b7414; }
   .navItem { min-height: 55px; }
   .navItem.active { box-shadow: inset 0 3px #2074df; }
 }
 @media (max-width: 640px) {
   body { background-size: auto, 26px 26px, 26px 26px, auto; }
-  .main { padding-top: 16px; }
-  .workspaceHead { min-height: 45px; padding-bottom: 12px; }
-  .workspaceHead h1 { font-size: 28px; }
-  .workspaceHead h1::before { height: 22px; }
-  .homeRadar { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 12px; min-height: 105px; margin: 0 0 20px; padding: 13px; border-radius: 17px; }
-  .radarGraphic { width: 56px; height: 56px; }
-  .radarGraphic { background-size: auto; }
-  .pingOne { top: 13px; left: 35px; }.pingTwo { top: 38px; left: 15px; }.pingThree { top: 25px; left: 43px; }
-  .radarCopy { gap: 4px; }
-  .radarEyebrow { font-size: 8px; letter-spacing: .09em; }
-  .radarCopy > strong { font-size: 14px; }
-  .radarCopy > span:last-child { font-size: 10px; }
-  .radarCount { min-width: 42px; padding: 5px 0 5px 9px; }
-  .radarCount strong { font-size: 21px; }
-  .radarCount span { font-size: 8px; }
-  .radarAction { grid-column: 2 / 4; justify-self: start; min-height: 31px; margin-top: -3px; padding: 0 10px; font-size: 10px; }
-  .homeSection { margin-bottom: 22px; }
-  .eventList, .recentList { border-radius: 14px; }
-  .miniCalendar { border-radius: 14px; }
+  .main { padding-top: 17px; }
+  .homeDashboard { gap: 20px; }
+  .homeBrand { min-height: 64px; padding: 8px 12px; }
+  .homeBrandMark { width: 43px; height: 43px; }
+  .homeBrandText h1 { font-size: 17px; }
+  .homeBrandText small { font-size: 8px; letter-spacing: .06em; }
+  .homeBrandSignal { width: 29px; height: 29px; }
+  .followedShopList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .followedShop { gap: 8px; min-height: 64px; padding: 8px; border-radius: 12px; }
+  .followedShopIcon { width: 37px; height: 37px; }
+  .followedShopIcon svg { width: 20px; height: 20px; }
+  .followedShopName strong { font-size: 10px; }
+  .followedShopName small { font-size: 9px; }
+  .followedShopArrow { font-size: 19px; }
+  .homeUpcomingGrid { grid-auto-columns: minmax(235px, 78%); grid-auto-flow: column; grid-template-columns: none; gap: 10px; overflow-x: auto; padding: 2px 1px 10px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+  .homeEventCard { min-height: 174px; padding: 12px; scroll-snap-align: start; }
+  .homeEmptyFollow { align-items: flex-start; flex-direction: column; }
+  .spotlightShopHead { gap: 10px; min-height: 98px; padding: 13px; }
+  .spotlightShopIcon { width: 46px; height: 46px; }
+  .spotlightShopIcon svg { width: 23px; height: 23px; }
+  .spotlightShopIdentity h3 { font-size: 15px; }
+  .spotlightShopIdentity p { font-size: 9px; }
+  .spotlightFollow { min-height: 35px; padding: 0 10px; font-size: 10px; }
+  .spotlightEventList { padding: 0 10px; }
+  .spotlightEvent { gap: 7px; min-height: 55px; }
+  .spotlightEvent .eventTypeMark.small { width: 32px; height: 32px; }
+  .spotlightEventCopy strong { font-size: 10px; }
+  .spotlightEventCopy small { font-size: 9px; }
+  .spotlightEvent .homeEventPrice { padding: 0 6px; font-size: 9px; }
   .navItem { border-radius: 11px; }
 }
-@media (prefers-reduced-motion: reduce) { .radarSweep { animation: none; } }
+@media (max-width: 380px) { .followedShopList { grid-template-columns: 1fr; } }

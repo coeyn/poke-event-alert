@@ -29,6 +29,25 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("home presents the requested sections and keeps mobile navigation at the bottom", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Poké Event Alert" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Boutiques suivies" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "À venir" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Boutique mise en avant" })).toBeVisible();
+
+  const sections = await page.locator(".homeSection").evaluateAll((items) => items.map((item) => item.getBoundingClientRect().top));
+  expect(sections[0]).toBeLessThan(sections[1]);
+  expect(sections[1]).toBeLessThan(sections[2]);
+
+  const nav = await page.locator(".bottomNav").boundingBox();
+  expect(nav).not.toBeNull();
+  expect(nav!.y).toBeGreaterThan(600);
+  expect(nav!.y + nav!.height).toBeGreaterThanOrEqual(842);
+});
+
 test("home and Explorer find, open, follow, and unfollow a shop", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("League Challenge de test")).toBeVisible();

@@ -2,17 +2,55 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { EventCard } from "./EventCard";
 import { Loading } from "./Loading";
-import { loadUpcomingSnapshot, readFavorites, type PreviewEvent } from "../lib/preview";
-import { isPersonalEvent, readLocalSettings, type LocalSettings } from "../lib/local-settings";
-import { readBlockedVenues } from "../lib/blocked-venues";
 import { EventTypeMark } from "./EventTypeMark";
-import { CalendarTypeBadges } from "./CalendarTypeBadges";
-import { eventCategorySummary } from "../lib/event-category";
+import {
+  formatAdmission,
+  loadUpcomingSnapshot,
+  readFavorites,
+  toggleFavorite,
+  venuesFromEvents,
+  type PreviewEvent,
+  type PreviewVenue
+} from "../lib/preview";
+import { isPersonalEvent, matchesEventType, readLocalSettings, type LocalSettings } from "../lib/local-settings";
+import { readBlockedVenues } from "../lib/blocked-venues";
+import { syncVenueFollow } from "../lib/follows";
 
-function dayKey(date: Date) {
+const FEATURED_VENUE_KEY = "poke-event-alert:featured-venue";
+const RECENT_DAYS = 7;
+
+function recentCutoff() {
+  const date = new Date();
+  date.setDate(date.getDate() - RECENT_DAYS);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function displayTitle(event: PreviewEvent) {
+  return event.title === "Événement Play! Pokémon" ? event.venueName : event.title;
+}
+
+function eventDate(event: PreviewEvent) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(event.allDay ? {} : { hour: "2-digit", minute: "2-digit" })
+  }).format(new Date(event.startsAt));
+}
+
+function ShopIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M9 20v-6h6v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function BrandMark() {
+  return <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <circle cx="24" cy="24" r="21" fill="#F8FBFF" stroke="#1769D2" strokeWidth="2.5" />
+    <path d="M4.4 19.5h39.2a21 21 0 0 1 0 9H4.4a21 21 0 0 1 0-9Z" fill="#14243D" />
+    <path d="M5.3 19.5A21 21 0 0 1 42.7 19.5H5.3Z" fill="#E33C4C" />
+    <circle cx="24" cy="24" r="6.5" fill="#F8FBFF" stroke="#14243D" strokeWidth="2.5" />
+    <circle cx="24" cy="24" r="2.5" fill="#1769D2" />
+  </svg>;
 }
 
 export function HomeDashboard() {
@@ -20,86 +58,161 @@ export function HomeDashboard() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [blockedKeys, setBlockedKeys] = useState<string[]>([]);
   const [settings, setSettings] = useState<LocalSettings | null>(null);
+  const [featuredKey, setFeaturedKey] = useState("");
+  const [followError, setFollowError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const refresh = () => { setFavorites(readFavorites()); setBlockedKeys(readBlockedVenues().map((venue) => venue.key)); setSettings(readLocalSettings()); };
+    const refresh = () => {
+      setFavorites(readFavorites());
+      setBlockedKeys(readBlockedVenues().map((venue) => venue.key));
+      setSettings(readLocalSettings());
+      setFeaturedKey(localStorage.getItem(FEATURED_VENUE_KEY) ?? "");
+    };
     refresh();
-    loadUpcomingSnapshot().then((snapshot) => setEvents(snapshot.events)).catch(() => setError("Impossible de charger les événements pour le moment.")).finally(() => setLoading(false));
+    loadUpcomingSnapshot()
+      .then((snapshot) => setEvents(snapshot.events))
+      .catch(() => setError("Impossible de charger les événements pour le moment."))
+      .finally(() => setLoading(false));
     window.addEventListener("focus", refresh);
     window.addEventListener("poke-settings-changed", refresh);
-    return () => { window.removeEventListener("focus", refresh); window.removeEventListener("poke-settings-changed", refresh); };
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("poke-settings-changed", refresh);
+    };
   }, []);
 
-  const today = useMemo(() => new Date(), []);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + index);
-    return { key: dayKey(date), date };
-  }), [today]);
-  const visibleEvents = useMemo(() => events.filter((event) => !blockedKeys.includes(event.venueKey)), [events, blockedKeys]);
-  const personalEvents = useMemo(() => settings ? visibleEvents.filter((event) => isPersonalEvent(event, favorites, settings)) : [], [visibleEvents, favorites, settings]);
-  const upcoming = personalEvents.length ? personalEvents : visibleEvents;
-  const recentSource = personalEvents.length ? personalEvents : visibleEvents;
-  const recentCutoff = useMemo(() => dayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)), [today]);
-  const recentEvents = useMemo(() => recentSource.filter((event) => event.publishedAt && event.publishedAt.slice(0, 10) >= recentCutoff).sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "")), [recentSource, recentCutoff]);
-  const eventsByDay = useMemo(() => {
-    const map = new Map<string, PreviewEvent[]>();
-    for (const event of personalEvents) {
-      const key = dayKey(new Date(event.startsAt));
-      map.set(key, [...(map.get(key) ?? []), event]);
+  const visibleEvents = useMemo(
+    () => events.filter((event) => !blockedKeys.includes(event.venueKey)),
+    [events, blockedKeys]
+  );
+  const venues = useMemo(() => venuesFromEvents(visibleEvents), [visibleEvents]);
+  const personalizedEvents = useMemo(
+    () => settings
+      ? visibleEvents.filter((event) => isPersonalEvent(event, favorites, settings))
+      : [],
+    [visibleEvents, favorites, settings]
+  );
+  const upcomingEvents = useMemo(() => {
+    const priority = [...personalizedEvents].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    const selected = new Set(priority.map((event) => event.id));
+    const rest = visibleEvents
+      .filter((event) => !selected.has(event.id) && (!settings || matchesEventType(event.type, settings)))
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    return [...priority, ...rest].slice(0, 4);
+  }, [personalizedEvents, visibleEvents, settings]);
+  const shops = useMemo(
+    () => favorites
+      .map((key) => venues.find((venue) => venue.key === key))
+      .filter((venue): venue is PreviewVenue => Boolean(venue)),
+    [favorites, venues]
+  );
+  const featuredVenue = venues.find((venue) => venue.key === featuredKey)
+    ?? shops[0]
+    ?? venues[0]
+    ?? null;
+
+  useEffect(() => {
+    if (!venues.length || venues.some((venue) => venue.key === featuredKey)) return;
+    const initial = venues.find((venue) => favorites.includes(venue.key)) ?? venues[0];
+    setFeaturedKey(initial.key);
+    localStorage.setItem(FEATURED_VENUE_KEY, initial.key);
+  }, [venues, favorites, featuredKey]);
+
+  const recentFeaturedEvents = useMemo(() => {
+    if (!featuredVenue) return [];
+    const cutoff = recentCutoff();
+    return featuredVenue.events
+      .filter((event) => event.publishedAt && event.publishedAt.slice(0, 10) >= cutoff)
+      .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))
+      .slice(0, 3);
+  }, [featuredVenue]);
+
+  const hasRecentEvents = (venue: PreviewVenue) => {
+    const cutoff = recentCutoff();
+    return venue.events.some((event) => event.publishedAt && event.publishedAt.slice(0, 10) >= cutoff);
+  };
+
+  function changeFeaturedVenue() {
+    if (!venues.length) return;
+    const index = venues.findIndex((venue) => venue.key === featuredVenue?.key);
+    const next = venues[(index + 1) % venues.length];
+    setFeaturedKey(next.key);
+    localStorage.setItem(FEATURED_VENUE_KEY, next.key);
+  }
+
+  async function toggleFeaturedFollow(venue: PreviewVenue) {
+    setFollowError("");
+    const wasFollowed = favorites.includes(venue.key);
+    const next = toggleFavorite(venue.key);
+    setFavorites(next);
+    try {
+      await syncVenueFollow(venue, !wasFollowed);
+    } catch (followFailure) {
+      const restored = toggleFavorite(venue.key);
+      setFavorites(restored);
+      setFollowError(followFailure instanceof Error
+        ? followFailure.message
+        : "Impossible de mettre à jour cette boutique.");
     }
-    return map;
-  }, [personalEvents]);
-  const radarDescription = settings?.discoveryRadiusKm
-    ? `Rayon actif · ${settings.discoveryRadiusKm} km`
-    : favorites.length
-      ? `${favorites.length} boutique${favorites.length > 1 ? "s" : ""} suivie${favorites.length > 1 ? "s" : ""}`
-      : "Découverte nationale";
+  }
 
   if (loading) return <Loading />;
   if (error) return <div className="notice error">{error}</div>;
 
-  return <>
-    <section className="homeRadar" aria-label="Radar des événements">
-      <div className="radarGraphic" aria-hidden="true">
-        <span className="radarSweep" />
-        <span className="radarCore"><i /></span>
-        <span className="radarPing pingOne" />
-        <span className="radarPing pingTwo" />
-        <span className="radarPing pingThree" />
-      </div>
-      <div className="radarCopy">
-        <span className="radarEyebrow"><i /> Cherch’Combat · en direct</span>
-        <strong>{radarDescription}</strong>
-        <span>{personalEvents.length
-          ? `${personalEvents.length} événement${personalEvents.length > 1 ? "s" : ""} repéré${personalEvents.length > 1 ? "s" : ""} pour toi`
-          : "Suis une boutique ou active un rayon pour personnaliser tes alertes."}</span>
-      </div>
-      <div className="radarCount"><strong>{upcoming.length}</strong><span>à venir</span></div>
-      <Link href="/explorer/" className="radarAction">Explorer les événements <span aria-hidden="true">↗</span></Link>
+  return <div className="homeDashboard">
+    <header className="homeBrand" aria-label="Poké Event Alert">
+      <span className="homeBrandMark"><BrandMark /></span>
+      <span className="homeBrandText"><h1>Poké <em>Event</em> Alert</h1><small>Les événements Play! Pokémon près de chez toi</small></span>
+      <span className="homeBrandSignal" aria-hidden="true"><i /></span>
+    </header>
+
+    <section className="homeSection homeFollowed" aria-labelledby="home-followed-heading">
+      <div className="sectionHead"><h2 id="home-followed-heading">Boutiques suivies</h2><Link className="sectionLink" href="/mes-boutiques/">Tout voir →</Link></div>
+      {shops.length ? <div className="followedShopList">
+        {shops.slice(0, 6).map((venue) => <Link className="followedShop" key={venue.key} href={`/boutique/?key=${encodeURIComponent(venue.key)}`}>
+          <span className="followedShopIcon"><ShopIcon /></span>
+          <span className="followedShopName"><strong>{venue.name}</strong><small>{venue.city || "France"}</small></span>
+          {hasRecentEvents(venue) && <span className="venueNewDot" role="img" aria-label="Nouveaux événements ajoutés cette semaine" title="Nouveaux événements cette semaine" />}
+          <span className="followedShopArrow" aria-hidden="true">›</span>
+        </Link>)}
+      </div> : <div className="homeEmptyFollow"><span>Tu ne suis pas encore de boutique.</span><Link href="/boutiques/">Découvrir les boutiques →</Link></div>}
     </section>
-    <div className="homeColumns">
-      <div className="homePrimary">
-        <section className="homeSection">
-          <div className="sectionHead"><h2>Les 7 prochains jours</h2><Link className="sectionLink" href="/calendrier/">Calendrier complet →</Link></div>
-          <div className="miniCalendar" aria-label="Calendrier des sept prochains jours">{days.map(({ key, date }, index) => {
-            const matches = eventsByDay.get(key) ?? [];
-            return <Link key={key} className={index === 0 ? "miniDay today" : "miniDay"} href={`/calendrier/?day=${key}`} aria-label={`${new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(date)}, ${matches.length} événement${matches.length > 1 ? "s" : ""} pour toi${matches.length ? ` : ${eventCategorySummary(matches)}` : ""}`}><span>{new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(date)}</span><strong>{date.getDate()}</strong><CalendarTypeBadges events={matches} /></Link>;
-          })}</div>
-          {!personalEvents.length && <p className="homeHint">Suis une boutique ou ajoute un rayon de découverte pour remplir ton calendrier. <Link href="/explorer/">Trouver une boutique →</Link></p>}
-        </section>
-        <section className="homeSection">
-          <div className="sectionHead"><h2>{personalEvents.length ? "À venir pour toi" : "Prochains événements en France"}</h2><Link className="sectionLink" href="/explorer/">Tout explorer →</Link></div>
-          {upcoming.length ? <div className="eventList">{upcoming.slice(0, 4).map((event) => <EventCard key={event.id} event={event} />)}</div> : <div className="emptyState"><h3>Aucun événement à venir</h3><p>Reviens bientôt pour découvrir les prochaines annonces.</p></div>}
-        </section>
-      </div>
-      <aside className="homeSecondary">
-        <section className="homeSection">
-          <div className="sectionHead"><h2>Ajoutés récemment</h2><span>{personalEvents.length ? "Pour toi · 7 jours" : "France · 7 jours"}</span></div>
-          {recentEvents.length ? <div className="recentList">{recentEvents.slice(0, 5).map((event) => <Link key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}><EventTypeMark type={event.type} game={event.game} size="small" /><span className="recentBody"><span className="recentType">{event.type}</span><strong>{event.title === "Événement Play! Pokémon" ? event.venueName : event.title}</strong><small>{event.city || event.venueName} · le {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${event.publishedAt?.slice(0, 10)}T12:00:00`))}</small></span></Link>)}</div> : <div className="emptyState"><h3>Aucune annonce récente</h3><p>Les nouvelles publications apparaîtront ici.</p></div>}
-        </section>
-      </aside>
-    </div>
-  </>;
+
+    <section className="homeSection homeUpcoming" aria-labelledby="home-upcoming-heading">
+      <div className="sectionHead"><h2 id="home-upcoming-heading">À venir</h2><Link className="sectionLink" href="/calendrier/">Calendrier →</Link></div>
+      {upcomingEvents.length ? <div className="homeUpcomingGrid">
+        {upcomingEvents.map((event) => <Link className="homeEventCard" key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
+          <span className="homeEventTop"><span className="homeEventDate">{eventDate(event)}</span><EventTypeMark type={event.type} game={event.game} size="small" /></span>
+          <span className="homeEventType">{event.type} · {event.game}</span>
+          <strong className="homeEventTitle">{displayTitle(event)}</strong>
+          <span className="homeEventVenue">{event.venueName} · {event.city || "France"}</span>
+          {formatAdmission(event.admission) && <span className="homeEventPrice">{formatAdmission(event.admission)}</span>}
+          <span className="homeEventArrow" aria-hidden="true">↗</span>
+        </Link>)}
+      </div> : <div className="homeEmptyFollow"><span>Aucun événement à venir dans les données.</span><Link href="/explorer/">Explorer les événements →</Link></div>}
+    </section>
+
+    <section className="homeSection homeSpotlight" aria-labelledby="home-spotlight-heading">
+      <div className="sectionHead"><h2 id="home-spotlight-heading">Boutique mise en avant</h2>{venues.length > 1 && <button className="spotlightChange" type="button" onClick={changeFeaturedVenue}>Changer ↻</button>}</div>
+      {featuredVenue ? <div className="spotlightCard">
+        <div className="spotlightShopHead">
+          <span className="spotlightShopIcon"><ShopIcon /></span>
+          <div className="spotlightShopIdentity"><span className="spotlightEyebrow">À découvrir · Play! Pokémon</span><h3>{featuredVenue.name}</h3><p>{[featuredVenue.address, featuredVenue.city].filter(Boolean).join(" · ") || "Adresse non renseignée"}</p></div>
+          <button className={favorites.includes(featuredVenue.key) ? "spotlightFollow followed" : "spotlightFollow"} type="button" onClick={() => void toggleFeaturedFollow(featuredVenue)}>{favorites.includes(featuredVenue.key) ? "✓ Suivie" : "+ Suivre"}</button>
+        </div>
+        {followError && <p className="spotlightError" role="status">{followError}</p>}
+        <div className="spotlightEventsHead"><strong>Événements récents</strong><Link href={`/boutique/?key=${encodeURIComponent(featuredVenue.key)}`}>Voir la boutique →</Link></div>
+        {recentFeaturedEvents.length ? <div className="spotlightEventList">
+          {recentFeaturedEvents.map((event) => <Link className="spotlightEvent" key={event.id} href={`/tournoi/?id=${encodeURIComponent(event.id)}`}>
+            <EventTypeMark type={event.type} game={event.game} size="small" />
+            <span className="spotlightEventCopy"><strong>{displayTitle(event)}</strong><small>{event.type} · {eventDate(event)}</small></span>
+            {formatAdmission(event.admission) && <span className="homeEventPrice">{formatAdmission(event.admission)}</span>}
+            <span className="spotlightEventArrow" aria-hidden="true">›</span>
+          </Link>)}
+        </div> : <p className="spotlightNoEvents">Pas de nouvel événement publié cette semaine. <Link href={`/boutique/?key=${encodeURIComponent(featuredVenue.key)}`}>Voir tous les événements</Link></p>}
+      </div> : <div className="homeEmptyFollow"><span>Aucune boutique disponible pour le moment.</span><Link href="/boutiques/">Trouver une boutique →</Link></div>}
+    </section>
+  </div>;
 }
