@@ -165,8 +165,8 @@ export default function ReglagesPage() {
           <>
             <p>
               {pushSubscribed
-                ? "Cet appareil est abonné aux alertes."
-                : "Active les alertes pour les boutiques que tu suis."}
+                ? "Cet appareil reçoit les alertes des boutiques suivies et, si tu l’as configuré, des boutiques proches selon ton rayon."
+                : "Active les alertes pour les boutiques suivies et, si tu l’as configuré, pour les boutiques proches selon ton rayon."}
             </p>
             <button className="secondaryButton" onClick={togglePush} disabled={pushBusy}>
               {pushBusy
