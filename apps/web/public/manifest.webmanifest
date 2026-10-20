@@ -1,8 +1,24 @@
 {
   "name": "Poké Event Alert",
   "short_name": "Poké Alert",
+  "id": "/poke-event-alert/",
   "start_url": "/poke-event-alert/",
+  "scope": "/poke-event-alert/",
   "display": "standalone",
   "background_color": "#07111f",
-  "theme_color": "#0d1b2a"
+  "theme_color": "#0d1b2a",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
