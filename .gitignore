@@ -6,6 +6,7 @@ build/
 .env.*
 !.env.example
 .secrets/
+apps/android/android.keystore
 coverage/
 apps/web/out/
 apps/web/public/data/

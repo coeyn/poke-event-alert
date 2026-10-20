@@ -1,0 +1,49 @@
+name: Android preview release
+
+on:
+  push:
+    tags:
+      - "android-preview-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build APK and publish GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 build platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build installable preview APK
+        working-directory: apps/android
+        run: bash ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Publish APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Poké Event Alert Android ${{ github.ref_name }}
+          prerelease: true
+          generate_release_notes: false
+          body: |
+            APK Android de préversion pour tester Poké Event Alert.
+
+            Cette application ouvre la version web en ligne et reçoit ses mises à jour depuis le site.
+            Elle est signée automatiquement par GitHub pour cette préversion. Une version future signée pour Google Play devra être installée séparément.
+          files: apps/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
